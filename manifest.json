@@ -1,0 +1,184 @@
+{
+    "name": "EcoSort AI - Phân loại rác thải thông minh",
+    "short_name": "EcoSort AI",
+    "description": "Hệ thống phân loại rác thải thông minh sử dụng AI và Machine Learning để bảo vệ môi trường",
+    "version": "2.1.0",
+    "start_url": "/",
+    "display": "standalone",
+    "orientation": "portrait-primary",
+    "theme_color": "#4CAF50",
+    "background_color": "#ffffff",
+    "lang": "vi",
+    "scope": "/",
+    "categories": ["education", "utilities", "productivity"],
+    "screenshots": [
+        {
+            "src": "screenshots/desktop-1.png",
+            "sizes": "1280x720",
+            "type": "image/png",
+            "platform": "wide",
+            "label": "Giao diện chính trên desktop"
+        },
+        {
+            "src": "screenshots/mobile-1.png",
+            "sizes": "390x844",
+            "type": "image/png",
+            "platform": "narrow",
+            "label": "Giao diện mobile"
+        },
+        {
+            "src": "screenshots/ml-dashboard.png",
+            "sizes": "1280x720",
+            "type": "image/png",
+            "platform": "wide",
+            "label": "ML Dashboard"
+        }
+    ],
+    "icons": [
+        {
+            "src": "icons/icon-72x72.png",
+            "sizes": "72x72",
+            "type": "image/png",
+            "purpose": "maskable any"
+        },
+        {
+            "src": "icons/icon-96x96.png",
+            "sizes": "96x96",
+            "type": "image/png",
+            "purpose": "maskable any"
+        },
+        {
+            "src": "icons/icon-128x128.png",
+            "sizes": "128x128",
+            "type": "image/png",
+            "purpose": "maskable any"
+        },
+        {
+            "src": "icons/icon-144x144.png",
+            "sizes": "144x144",
+            "type": "image/png",
+            "purpose": "maskable any"
+        },
+        {
+            "src": "icons/icon-152x152.png",
+            "sizes": "152x152",
+            "type": "image/png",
+            "purpose": "maskable any"
+        },
+        {
+            "src": "icons/icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable any"
+        },
+        {
+            "src": "icons/icon-384x384.png",
+            "sizes": "384x384",
+            "type": "image/png",
+            "purpose": "maskable any"
+        },
+        {
+            "src": "icons/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable any"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Phát hiện nhanh",
+            "short_name": "Phát hiện",
+            "description": "Bật camera và bắt đầu phát hiện rác thải",
+            "url": "/?action=detect",
+            "icons": [
+                {
+                    "src": "icons/shortcut-detect.png",
+                    "sizes": "96x96"
+                }
+            ]
+        },
+        {
+            "name": "ML Dashboard",
+            "short_name": "ML",
+            "description": "Xem thống kê và quản lý mô hình AI",
+            "url": "/?tab=ml-dashboard",
+            "icons": [
+                {
+                    "src": "icons/shortcut-ml.png",
+                    "sizes": "96x96"
+                }
+            ]
+        },
+        {
+            "name": "Thống kê",
+            "short_name": "Stats",
+            "description": "Xem thống kê phân loại rác thải",
+            "url": "/?tab=statistics",
+            "icons": [
+                {
+                    "src": "icons/shortcut-stats.png",
+                    "sizes": "96x96"
+                }
+            ]
+        },
+        {
+            "name": "Cài đặt",
+            "short_name": "Settings",
+            "description": "Cấu hình ứng dụng và mô hình AI",
+            "url": "/?tab=settings",
+            "icons": [
+                {
+                    "src": "icons/shortcut-settings.png",
+                    "sizes": "96x96"
+                }
+            ]
+        }
+    ],
+    "related_applications": [],
+    "prefer_related_applications": false,
+    "protocol_handlers": [
+        {
+            "protocol": "web+ecosort",
+            "url": "/?action=%s"
+        }
+    ],
+    "file_handlers": [
+        {
+            "action": "/",
+            "accept": {
+                "image/*": [".jpg", ".jpeg", ".png", ".gif", ".webp"]
+            }
+        }
+    ],
+    "share_target": {
+        "action": "/",
+        "method": "POST",
+        "enctype": "multipart/form-data",
+        "params": {
+            "title": "title",
+            "text": "text",
+            "url": "url",
+            "files": [
+                {
+                    "name": "image",
+                    "accept": ["image/*"]
+                }
+            ]
+        }
+    },
+    "permissions": [
+        "camera",
+        "storage",
+        "background-sync",
+        "periodic-background-sync",
+        "push",
+        "notifications"
+    ],
+    "features": [
+        "machine-learning",
+        "computer-vision",
+        "offline-support",
+        "background-sync",
+        "push-notifications"
+    ]
+}
