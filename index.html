@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoSort AI - Phân loại rác thải thông minh</title>
+    <meta name="description" content="Hệ thống phân loại rác thải thông minh sử dụng AI và Machine Learning">
+    <meta name="keywords" content="AI, Machine Learning, Phân loại rác, Môi trường, TensorFlow">
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4CAF50">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="EcoSort AI">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.0.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.2/dist/coco-ssd.min.js"></script>
+    
+    <!-- Chart.js for ML visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    
+    <!-- WebGL Detection -->
+    <script>
+        if (!window.WebGLRenderingContext) {
+            alert('WebGL không được hỗ trợ. Ứng dụng có thể không hoạt động đúng.');
+        }
+    </script>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-spinner">
+                <div class="spinner-ring"></div>
+                <div class="spinner-ring"></div>
+                <div class="spinner-ring"></div>
+            </div>
+            <h2>EcoSort AI</h2>
+            <p id="loadingText">Đang khởi tạo hệ thống...</p>
+            <div class="loading-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="loadingProgress"></div>
+                </div>
+                <span class="progress-text">0%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-leaf"></i>
+                <h1>EcoSort AI</h1>
+                <span class="version">v2.0 ML Edition</span>
+            </div>
+            <nav class="nav">
+                <a href="#detection" class="nav-link active">
+                    <i class="fas fa-camera"></i>
+                    Phát hiện
+                </a>
+                <a href="#statistics" class="nav-link">
+                    <i class="fas fa-chart-bar"></i>
+                    Thống kê
+                </a>
+                <a href="#ml-dashboard" class="nav-link">
+                    <i class="fas fa-brain"></i>
+                    ML Dashboard
+                </a>
+                <a href="#settings" class="nav-link">
+                    <i class="fas fa-cog"></i>
+                    Cài đặt
+                </a>
+            </nav>
+            <div class="header-controls">
+                <button class="btn btn-icon" onclick="showShortcutsModal()" title="Phím tắt (H)">
+                    <i class="fas fa-keyboard"></i>
+                </button>
+                <div class="theme-toggle">
+                    <button class="btn btn-icon" id="themeToggle" title="Chuyển theme">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content" id="main-content">
+        <!-- Detection Section -->
+        <section id="detection" class="section detection-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2><i class="fas fa-camera"></i> Phát hiện rác thải</h2>
+                    <div class="detection-info">
+                        <div class="info-item">
+                            <span class="info-label">FPS:</span>
+                            <span class="info-value" id="fpsCounter">0</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Phát hiện:</span>
+                            <span class="info-value" id="detectionCount">0</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">ML Status:</span>
+                            <span class="info-value ml-status" id="mlStatus">Sẵn sàng</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Camera Controls -->
+                <div class="camera-controls">
+                    <button class="btn btn-primary" id="startCamera">
+                        <i class="fas fa-camera"></i> Bật Camera (C)
+                    </button>
+                    <button class="btn btn-secondary" id="captureImage" disabled>
+                        <i class="fas fa-camera-retro"></i> Chụp Ảnh (Space)
+                    </button>
+                    <button class="btn btn-info" id="uploadImage">
+                        <i class="fas fa-upload"></i> Tải Ảnh (U)
+                    </button>
+                    <button class="btn btn-warning" id="toggleDetection" style="display: none;">
+                        <i class="fas fa-play"></i> Tạm Dừng (P)
+                    </button>
+                    <button class="btn btn-danger" id="stopCamera" style="display: none;">
+                        <i class="fas fa-stop"></i> Dừng (S)
+                    </button>
+                </div>
+
+                <!-- Video Container -->
+                <div class="video-container">
+                    <div id="cameraStatus" class="camera-status">
+                        <i class="fas fa-camera-slash"></i>
+                        <span>Camera chưa được bật</span>
+                    </div>
+                    <video id="video" autoplay muted playsinline></video>
+                    <canvas id="canvas"></canvas>
+                </div>
+                <input type="file" id="imageInput" accept="image/*" style="display: none;">
+
+                <!-- Detection Results -->
+                <div class="detection-results">
+                    <h3><i class="fas fa-search"></i> Kết quả phát hiện</h3>
+                    <div id="results-container" class="results-container">
+                        <div class="no-detection">
+                            <i class="fas fa-eye-slash"></i>
+                            <p>Chưa phát hiện rác thải nào</p>
+                            <small>Hướng camera về phía các vật thể cần phân loại</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ML Dashboard Section -->
+        <section id="ml-dashboard" class="section ml-dashboard-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2><i class="fas fa-brain"></i> Machine Learning Dashboard</h2>
+                    <div class="dashboard-controls">
+                        <button class="btn btn-primary" id="trainModel">
+                            <i class="fas fa-dumbbell"></i> Huấn luyện mô hình
+                        </button>
+                        <button class="btn btn-secondary" id="exportModel">
+                            <i class="fas fa-download"></i> Xuất mô hình
+                        </button>
+                        <button class="btn btn-info" id="importModel">
+                            <i class="fas fa-upload"></i> Nhập mô hình
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ML Stats Grid -->
+                <div class="ml-stats-grid">
+                    <div class="ml-card">
+                        <div class="ml-card-header">
+                            <h4><i class="fas fa-target"></i> Độ chính xác</h4>
+                        </div>
+                        <div class="ml-card-body">
+                            <div class="accuracy-display">
+                                <div class="accuracy-circle">
+                                    <canvas id="accuracyChart" width="120" height="120"></canvas>
+                                    <div class="accuracy-text">
+                                        <span class="accuracy-value" id="currentAccuracy">0%</span>
+                                        <span class="accuracy-label">Hiện tại</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ml-card">
+                        <div class="ml-card-header">
+                            <h4><i class="fas fa-database"></i> Dữ liệu huấn luyện</h4>
+                        </div>
+                        <div class="ml-card-body">
+                            <div class="training-data-stats">
+                                <div class="data-item">
+                                    <span class="data-label">Tổng mẫu:</span>
+                                    <span class="data-value" id="totalSamples">0</span>
+                                </div>
+                                <div class="data-item">
+                                    <span class="data-label">Mẫu tốt:</span>
+                                    <span class="data-value" id="goodSamples">0</span>
+                                </div>
+                                <div class="data-item">
+                                    <span class="data-label">Cần cải thiện:</span>
+                                    <span class="data-value" id="badSamples">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ml-card">
+                        <div class="ml-card-header">
+                            <h4><i class="fas fa-clock"></i> Thời gian huấn luyện</h4>
+                        </div>
+                        <div class="ml-card-body">
+                            <div class="training-time-info">
+                                <div class="time-item">
+                                    <span class="time-label">Lần cuối:</span>
+                                    <span class="time-value" id="lastTraining">Chưa có</span>
+                                </div>
+                                <div class="time-item">
+                                    <span class="time-label">Thời gian:</span>
+                                    <span class="time-value" id="trainingDuration">0s</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ml-card">
+                        <div class="ml-card-header">
+                            <h4><i class="fas fa-cogs"></i> Cấu hình mô hình</h4>
+                        </div>
+                        <div class="ml-card-body">
+                            <div class="model-config">
+                                <div class="config-item">
+                                    <label>Learning Rate:</label>
+                                    <input type="range" id="learningRate" min="0.0001" max="0.01" step="0.0001" value="0.001">
+                                    <span id="learningRateValue">0.001</span>
+                                </div>
+                                <div class="config-item">
+                                    <label>Batch Size:</label>
+                                    <select id="batchSize">
+                                        <option value="16">16</option>
+                                        <option value="32" selected>32</option>
+                                        <option value="64">64</option>
+                                    </select>
+                                </div>
+                                <div class="config-item">
+                                    <label>Epochs:</label>
+                                    <input type="number" id="epochs" min="10" max="200" value="50">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Training Progress -->
+                <div class="training-progress" id="trainingProgress" style="display: none;">
+                    <h4><i class="fas fa-spinner fa-spin"></i> Đang huấn luyện mô hình...</h4>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="trainingProgressFill"></div>
+                        </div>
+                        <div class="progress-info">
+                            <span>Epoch <span id="currentEpoch">0</span>/<span id="totalEpochs">0</span></span>
+                            <span>Loss: <span id="currentLoss">0.000</span></span>
+                            <span>Accuracy: <span id="currentTrainingAccuracy">0%</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Model Comparison -->
+                <div class="model-comparison">
+                    <h4><i class="fas fa-balance-scale"></i> So sánh mô hình</h4>
+                    <div class="comparison-chart">
+                        <canvas id="modelComparisonChart" width="600" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Statistics Section (existing) -->
+        <section id="statistics" class="section statistics-section">
+            <!-- Existing statistics content -->
+        </section>
+
+        <!-- Settings Section -->
+        <section id="settings" class="section settings-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2><i class="fas fa-cog"></i> Cài đặt</h2>
+                </div>
+
+                <div class="settings-grid">
+                    <!-- Detection Settings -->
+                    <div class="settings-card">
+                        <h4><i class="fas fa-eye"></i> Cài đặt phát hiện</h4>
+                        <div class="setting-item">
+                            <label for="confidenceThreshold">Ngưỡng tin cậy:</label>
+                            <input type="range" id="confidenceThreshold" min="0" max="1" step="0.05" value="0.5">
+                            <span id="confidenceValue">50%</span>
+                        </div>
+                        <div class="setting-item">
+                            <label for="detectionSpeed">Tốc độ phát hiện:</label>
+                            <select id="detectionSpeed">
+                                <option value="fast">Nhanh (30 FPS)</option>
+                                <option value="medium" selected>Trung bình (15 FPS)</option>
+                                <option value="slow">Chậm (5 FPS)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- ML Settings -->
+                    <div class="settings-card">
+                        <h4><i class="fas fa-brain"></i> Cài đặt ML</h4>
+                        <div class="setting-item">
+                            <label>
+                                <input type="checkbox" id="enableOnlineLearning" checked>
+                                Bật học trực tuyến
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label>
+                                <input type="checkbox" id="enableFederatedLearning">
+                                Bật học liên kết
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label for="autoRetrainThreshold">Ngưỡng tự động huấn luyện lại:</label>
+                            <input type="number" id="autoRetrainThreshold" min="10" max="100" value="50">
+                            <span>mẫu</span>
+                        </div>
+                    </div>
+
+                    <!-- Performance Settings -->
+                    <div class="settings-card">
+                        <h4><i class="fas fa-tachometer-alt"></i> Hiệu suất</h4>
+                        <div class="setting-item">
+                            <label>
+                                <input type="checkbox" id="enableGPU" checked>
+                                Sử dụng GPU (WebGL)
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label>
+                                <input type="checkbox" id="enableWorker">
+                                Sử dụng Web Worker
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label for="memoryLimit">Giới hạn bộ nhớ (MB):</label>
+                            <input type="number" id="memoryLimit" min="512" max="4096" value="2048">
+                        </div>
+                    </div>
+
+                    <!-- Data Management -->
+                    <div class="settings-card">
+                        <h4><i class="fas fa-database"></i> Quản lý dữ liệu</h4>
+                        <div class="setting-item">
+                            <button class="btn btn-primary" id="exportData">
+                                <i class="fas fa-download"></i> Xuất dữ liệu
+                            </button>
+                        </div>
+                        <div class="setting-item">
+                            <button class="btn btn-secondary" id="importData">
+                                <i class="fas fa-upload"></i> Nhập dữ liệu
+                            </button>
+                        </div>
+                        <div class="setting-item">
+                            <button class="btn btn-danger" id="clearAllData">
+                                <i class="fas fa-trash"></i> Xóa tất cả dữ liệu
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>EcoSort AI</h4>
+                    <p>Hệ thống phân loại rác thải thông minh với Machine Learning</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Liên hệ</h4>
+                    <p>Email: congphuc6525@gmail.com</p>
+                    <p>Đại học Mỏ Địa Chất</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Công nghệ</h4>
+                    <p>TensorFlow.js, WebGL, PWA</p>
+                    <p>Machine Learning, Computer Vision</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 MrPhucCong. All rights reserved.</p>
+                <div class="footer-links">
+                    <a href="#" onclick="showPrivacyPolicy()">Chính sách bảo mật</a>
+                    <a href="#" onclick="showTermsOfService()">Điều khoản</a>
+                    <a href="#" onclick="showAbout()">Giới thiệu</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+    
+    <!-- PWA Install Prompt -->
+    <script>
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            const installBtn = document.createElement('button');
+            installBtn.className = 'install-prompt';
+            installBtn.innerHTML = '<i class="fas fa-download"></i> Cài đặt ứng dụng';
+            installBtn.onclick = async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log(`User response: ${outcome}`);
+                    deferredPrompt = null;
+                    installBtn.remove();
+                }
+            };
+            
+            document.body.appendChild(installBtn);
+        });
+    </script>
+</body>
+</html>
