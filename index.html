@@ -33,12 +33,65 @@
         </header>
 
         <main>
-            <section id="welcome-message" classcute]</p>
+            <section id="welcome-message" class="card fade-in">
+                <h2>✨ Tin nhắn từ anh ✨</h2>
+                <img src="images/your_photo_or_couple_photo.jpg" alt="Ảnh của bạn hoặc hai bạn" class="profile-pic bounce-in">
+                <p>
+                    Hân mèo con yêu quý, anh biết em đã rất vất vả và cố gắng hết sức cho kỳ thi THPT vừa rồi. Anh cực kỳ tự hào về em! 😼
+                    Dù kết quả thế nào thì anh tin em đã làm hết sức mình và điều đó mới là quan trọng nhất. Xin đừng lo lắng nữa.
+                    Trang web này là món quà nhỏ thay lời anh muốn nói: "Nghỉ ngơi đi em, anh ở đây để làm em vui và giải tỏa mọi căng thẳng!". 
+                    Hãy dành chút thời gian khám phá nhé, meow~
+                </p>
+                <button id="startJourneyBtn" class="button-scale">Bắt đầu hành trình thư giãn mèo con! <i class="fas fa-cat"></i></button>
+            </section>
+
+            <section id="relax-zone" class="hidden bounce-in-delay">
+                <h2>🥰 Góc thư giãn của Bảo Hân 🥰</h2>
+
+                <div class="feature-grid">
+                    <div class="feature-card zoom-in-delay" data-section="music">
+                        <img src="images/cat_music_icon.jpg" alt="Mèo nghe nhạc">
+                        <h3>🎼 Giai điệu Meowlax 🎼</h3>
+                        <p>Những bản nhạc nhẹ nhàng như tiếng gừ gừ của mèo.</p>
+                    </div>
+                    <div class="feature-card zoom-in-delay" data-section="gallery">
+                        <img src="images/cat_photo_icon.jpg" alt="Mèo chụp ảnh">
+                        <h3>🖼️ Khoảnh khắc "sen" và "boss" 🖼️</h3>
+                        <p>Cùng ôn lại những kỷ niệm đáng yêu của chúng ta.</p>
+                    </div>
+                    <div class="feature-card zoom-in-delay" data-section="fun-videos">
+                        <img src="images/cat_video_icon.jpg" alt="Mèo xem video">
+                        <h3>😂 Video "mlem mlem" 😂</h3>
+                        <p>Xem gì đó để cười thật to và giải tỏa căng thẳng.</p>
+                    </div>
+                    <div class="feature-card zoom-in-delay" data-section="quotes">
+                        <img src="images/cat_quote_icon.jpg" alt="Mèo viết thư">
+                        <h3>💖 Lời nhắn từ "fan cuồng" 💖</h3>
+                        <p>Luôn nhớ rằng em là cô mèo đáng yêu nhất!</p>
+                    </div>
+                    <div class="feature-card hidden zoom-in-delay" data-section="secret" id="secretCatCard">
+                        <img src="images/secret_cat_icon.jpg" alt="Mèo bí ẩn">
+                        <h3>🤫 Điều bí mật 🤫</h3>
+                        <p>Chỉ dành cho Bảo Hân thôi đó! (Click meow~)</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Các mục nội dung sẽ được ẩn/hiện bởi JavaScript -->
+
+            <section id="music-section" class="content-section hidden slide-in-top">
+                <h2>🎼 Giai điệu Meowlax 🎼</h2>
+                <p>Một vài bài hát anh nghĩ em sẽ thích để thư giãn, như khi mèo con nằm sưởi nắng vậy.</p>
+                <div class="audio-player">
+                    <img src="images/cat_playing_music.jpg" alt="Mèo chơi nhạc" class="audio-player-cat">
+                    <audio controls src="music/meow_song1.mp3"></audio>
+                </div>
+                <p class="song-title"><i class="fas fa-play-circle"></i> Bài hát ru mèo số 1 - [Phúc cuteeee]</p>
                 <div class="audio-player">
                     <img src="images/cat_listening.jpg" alt="Mèo nghe nhạc" class="audio-player-cat">
                     <audio controls src="music/meow_song2.mp3"></audio>
                 </div>
-                <p class="song-title"><i class="fas fa-play-circle"></i> Bài hát ru mèo số 2 - [Phúc ĐẸp Troai]</p>
+                <p class="song-title"><i class="fas fa-play-circle"></i> Bài hát ru mèo số 2 - [Phúc đẹp troaiii]</p>
                 <!-- Thêm nhiều bài hát khác -->
             </section>
 
@@ -59,10 +112,10 @@
                 <h2>😂 Video "mlem mlem" 😂</h2>
                 <p>Nếu em cần cười thật nhiều, hãy xem mấy video mèo hài hước này nhé!</p>
                 <div class="video-container">
-                    <iframe width="560" height="315" src="https://youtube.com/shorts/QxVe2lRQ6l4?si=hrJ2yQEabB2pXKKm" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    <iframe width="560" height="315" src="https://youtube.com/shorts/XDHqhRFjcQA?si=DGVRokfENfsHFWEg" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                 </div>
                 <div class="video-container">
-                    <iframe width="560" height="315" src="https://youtube.com/shorts/XDHqhRFjcQA?si=DGVRokfENfsHFWEg" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    <iframe width="560" height="315" src="https://youtube.com/shorts/QxVe2lRQ6l4?si=hrJ2yQEabB2pXKKm" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                 </div>
                 <!-- Thêm nhiều video khác -->
                 <p class="cat-meme-text">"Sen" ơi, có xem nữa không? Mlem mlem lắm đó!</p>
