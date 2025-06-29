@@ -1,0 +1,678 @@
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Comfortaa:wght@400;700&family=Quicksand:wght@300;400;500;600;700&display=swap');
+
+/* Định nghĩa bảng màu cute & font chữ */
+:root {
+    --primary-color: #ffb6c1; /* Hồng baby */
+    --secondary-color: #ffccd5; /* Hồng nhạt hơn */
+    --accent-color-1: #a2d2ff; /* Xanh baby */
+    --accent-color-2: #ffe0b2; /* Cam đào */
+    --text-color: #5d5d5d; /* Xám ấm */
+    --heading-color: #e76f51; /* Đỏ cam ấm áp, đậm hơn */
+    --background-light: #fff0f5; /* Hồng kem nhạt, nền */
+    --card-background: #ffffff; /* Nền card trắng tinh */
+    --shadow-light: rgba(0, 0, 0, 0.08); /* Đổ bóng nhẹ */
+    --border-cute: #ffadad; /* Đỏ pastel, viền */
+
+    --font-script: 'Dancing Script', cursive; /* Font chữ viết tay cho tiêu đề */
+    --font-body: 'Comfortaa', cursive; /* Font tròn trịa cho body */
+    --font-subtitle: 'Quicksand', sans-serif; /* Font phụ cho subtitle */
+}
+
+body {
+    font-family: var(--font-body);
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, var(--background-light) 0%, #fff7f9 100%);
+    color: var(--text-color);
+    line-height: 1.6;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* --- Nhạc nền --- */
+#background-music {
+    display: none; /* Ẩn trình điều khiển mặc định, sẽ được điều khiển bằng JS */
+}
+
+/* --- Dấu chân mèo nền --- */
+.background-paws {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: -1;
+}
+
+.background-paws div {
+    position: absolute;
+    background-image: url('images/paw_print.png'); /* Dấu chân mèo */
+    background-size: contain;
+    background-repeat: no-repeat;
+    opacity: 0.05; /* Rất mờ */
+    animation: floatingPaw 15s infinite ease-in-out;
+}
+
+.paw-1 { width: 100px; height: 100px; top: -50px; left: 10%; animation-delay: 0s; }
+.paw-2 { width: 80px; height: 80px; top: -30px; left: 40%; animation-delay: 3s; }
+.paw-3 { width: 120px; height: 120px; bottom: -60px; left: 70%; animation-delay: 6s; }
+.paw-4 { width: 70px; height: 70px; top: 10%; right: -40px; animation-delay: 9s; }
+.paw-5 { width: 90px; height: 90px; bottom: 5%; left: 20%; animation-delay: 12s; }
+
+/* --- Header --- */
+header {
+    background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+    color: white;
+    padding: 40px 20px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    position: relative;
+    overflow: hidden;
+    border-bottom-left-radius: 50px; /* Bo tròn góc dưới */
+    border-bottom-right-radius: 50px;
+}
+
+header h1 {
+    font-family: var(--font-script);
+    font-size: 3.8em; /* Lớn hơn */
+    margin: 0;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    margin-bottom: 10px;
+    color: #fff; /* Tiêu đề màu trắng nổi bật */
+}
+
+header .subtitle {
+    font-family: var(--font-subtitle);
+    font-size: 1.3em;
+    opacity: 0.95;
+    margin-top: 5px;
+    font-weight: 500;
+}
+
+.header-cat-left, .header-cat-right {
+    position: absolute;
+    height: 150px; /* Lớn hơn */
+    filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.3));
+    z-index: 1; /* Nổi lên trên */
+}
+
+.header-cat-left {
+    bottom: -30px;
+    left: 20px;
+    transform: rotateY(180deg); /* Lật ngang để nhìn vào giữa */
+    animation: floatUpDownWithRotate 4s ease-in-out infinite;
+}
+
+.header-cat-right {
+    bottom: -30px;
+    right: 20px;
+    animation: floatUpDown 4s ease-in-out infinite;
+}
+
+main {
+    max-width: 900px;
+    margin: 30px auto;
+    padding: 20px;
+}
+
+/* --- Thẻ chung (sections) --- */
+.card, .content-section {
+    background: var(--card-background);
+    padding: 30px;
+    border-radius: 25px; /* Rất bo tròn */
+    box-shadow: 0 10px 35px var(--shadow-light); /* Đổ bóng rõ hơn */
+    margin-bottom: 30px;
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 3px dashed var(--border-cute); /* Viền nét đứt */
+    position: relative;
+    overflow: hidden; /* Dùng cho hiệu ứng confetti */
+}
+
+.card:hover, .content-section:hover {
+    transform: translateY(-10px) rotate(1deg); /* Nhảy lên cao hơn và xoay nhẹ */
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.22);
+}
+
+h2 {
+    font-family: var(--font-script);
+    color: var(--heading-color);
+    font-size: 3em; /* Rất lớn và mềm mại */
+    margin-bottom: 25px;
+    text-shadow: 2px 2px 3px rgba(0,0,0,0.1);
+    position: relative;
+    display: inline-block; /* Để hiệu ứng highlight chỉ trên chữ */
+}
+h2::after { /* Hiệu ứng gạch chân sóng */
+    content: '';
+    position: a<ctrl61>absolute;
+    left: 0;
+    bottom: -10px;
+    width: 100%;
+    height: 5px;
+    background: url('images/wavy_line.png') repeat-x center bottom; /* Đường sóng đẹp mắt */
+    background-size: auto 100%;
+}
+
+p {
+    font-family: var(--font-body);
+    font-size: 1.15em;
+    margin-bottom: 20px;
+    color: var(--text-color);
+}
+
+/* --- Ảnh đại diện Bảo Hân --- */
+.profile-pic {
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 8px solid var(--primary-color); /* Viền dày hơn */
+    box-shadow: 0 0 25px rgba(255,182,193,0.7); /* Đổ bóng hồng hào */
+    margin-bottom: 30px;
+    animation: rotateAndFloat 6s ease-in-out infinite alternate; /* Hiệu ứng mới */
+}
+
+/* --- Nút bấm chung --- */
+button {
+    background: linear-gradient(to right, var(--heading-color), var(--primary-color));
+    color: white;
+    padding: 18px 40px; /* Lớn hơn */
+    border: none;
+    border-radius: 40px; /* Cực tròn */
+    font-size: 1.3em; /* Lớn hơn */
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55); /* Hiệu ứng spring-like */
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    letter-spacing: 0.5px; /* Giãn chữ nhẹ */
+}
+
+button:hover {
+    background: linear-gradient(to right, #f08d6c, #ffcfe3); /* Màu đậm hơn khi hover */
+    transform: translateY(-8px) scale(1.05); /* Nhảy lên và phóng to */
+    box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+}
+
+.button-scale:hover {
+    animation: buttonScaleBounce 0.5s ease-in-out forwards; /* Chỉ khi hover */
+}
+
+.hidden {
+    display: none;
+}
+
+/* --- Lưới tính năng (feature grid) --- */
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 30px; /* Khoảng cách lớn hơn */
+    margin-top: 40px;
+}
+
+.feature-card {
+    background: linear-gradient(135deg, #fefefe, #ffebee); /* Màu gradient nhẹ */
+    padding: 30px; /* Đệm lớn hơn */
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    border: 2px solid var(--secondary-color);
+    position: relative;
+    overflow: hidden;
+    transform: scale(1);
+    opacity: 1;
+}
+
+.feature-card:hover {
+    transform: scale(1.1) rotate(3deg); /* Phóng to và xoay nhiều hơn */
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(135deg, #fff0f5, #ffd9e7);
+}
+
+/* Hiệu ứng móng vuốt khi hover */
+.feature-card:hover::before {
+    content: '';
+    position: absolute;
+    bottom: -15px;
+    right: -15px;
+    width: 80px;
+    height: 80px;
+    background-image: url('images/paw_print_small.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    opacity: 0.3;
+    transform: rotate(45deg);
+    transition: all 0.3s ease;
+}
+
+.feature-card img {
+    width: 100px; /* Icon lớn hơn */
+    height: 100px;
+    margin-bottom: 20px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 5px solid var(--accent-color-1); /* Màu viền xanh baby */
+    padding: 8px;
+    background-color: white;
+    filter: drop-shadow(2px 2px 5px rgba(0,0,0,0.2));
+    transition: transform 0.3s ease;
+}
+
+.feature-card:hover img {
+    transform: rotate(-10deg); /* Icon xoay nhẹ khi hover */
+}
+
+.feature-card h3 {
+    font-family: var(--font-body);
+    color: var(--heading-color);
+    font-size: 1.5em; /* Lớn hơn */
+    margin: 10px 0;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
+}
+
+.feature-card p {
+    font-size: 1em;
+    color: #777;
+}
+
+/* --- Các phần nội dung cụ thể --- */
+.content-section {
+    padding: 35px;
+    margin-top: 40px;
+}
+
+/* --- Nhạc --- */
+.audio-player {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Khoảng cách giữa mèo và audio player */
+    margin-bottom: 25px;
+    background-color: #f7f7f7;
+    border-radius: 15px;
+    padding: 15px 20px;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.audio-player-cat {
+    width: 80px;
+    height: 80px;
+    object-fit: contain; /* Giữ tỷ lệ ảnh mèo */
+    filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.1));
+}
+
+#music-section audio {
+    flex-grow: 1; /* Audio player chiếm hết không gian còn lại */
+    width: auto; /* Điều chỉnh lại width */
+    filter: sepia(0.2) hue-rotate(330deg) brightness(1.1); /* Màu sắc nhẹ nhàng hơn */
+}
+
+.song-title {
+    font-style: normal;
+    color: var(--heading-color);
+    font-weight: 600;
+    font-size: 1.05em;
+    margin-top: -10px; /* Đẩy lên gần audio player */
+    margin-bottom: 25px;
+    text-align: left; /* Căn trái */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-left: 10px; /* Thụt lề nhẹ */
+}
+.song-title .fas {
+    color: var(--accent-color-1); /* Icon play màu xanh */
+}
+
+
+/* --- Thư viện ảnh --- */
+.photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px; /* Khoảng cách lớn hơn */
+}
+
+.photo-grid img {
+    width: 100%;
+    height: 200px; /* Chiều cao cố định */
+    object-fit: cover;
+    border-radius: 18px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    border: 4px dashed transparent; /* Viền trong suốt mặc định */
+}
+
+.photo-grid img:hover {
+    transform: scale(1.08) rotate(-4deg); /* Phóng to và xoay nhiều hơn */
+    border: 4px dashed var(--accent-color-2); /* Viền màu cam đào khi hover */
+}
+
+/* --- Video --- */
+.video-container {
+    position: relative;
+    width: 100%;
+    padding-bottom: 56.25%;
+    margin-bottom: 30px;
+    background-color: #000;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+.cat-meme-text {
+    text-align: center;
+    font-style: italic;
+    color: var(--heading-color);
+    font-size: 1.2em; /* Lớn hơn */
+    margin-top: 25px;
+    font-weight: 600;
+}
+.section-cat-icon {
+    display: block;
+    margin: 30px auto;
+    width: 120px;
+    height: 120px;
+    filter: drop-shadow(3px 3px 6px rgba(0,0,0,0.2));
+}
+
+/* --- Quotes --- */
+.quote-box {
+    background: #fffafa;
+    border-left: 10px solid var(--accent-color-1); /* Viền dày hơn */
+    padding: 25px 30px;
+    margin-bottom: 25px;
+    border-radius: 15px;
+    font-style: italic;
+    color: #444;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.quote-box p {
+    margin-top: 0;
+    margin-bottom: 12px;
+    font-size: 1.1em;
+}
+.quote-box p .fas {
+    color: var(--primary-color);
+    margin-left: 10px;
+    font-size: 0.95em;
+}
+
+.quote-box span {
+    display: block;
+    text-align: right;
+    font-weight: bold;
+    color: var(--heading-color);
+    font-style: normal;
+    font-size: 1em;
+}
+
+/* --- Secret Section ---*/
+#secret-section {
+    background: linear-gradient(135deg, #ffeef5, #f0f8ff);
+    border: 3px dashed var(--accent-color-1);
+    padding: 40px;
+}
+.secret-message {
+    font-size: 1.3em; /* Lớn hơn */
+    font-weight: 500;
+    color: #3a3a3a;
+    text-align: center;
+    padding: 10px 0;
+    line-height: 1.8;
+}
+.secret-cat-gif {
+    display: block;
+    margin: 30px auto;
+    max-width: 90%; /* Lớn hơn */
+    height: auto;
+    border-radius: 20px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+}
+
+.cat-button {
+    background: linear-gradient(to right, var(--accent-color-1), #bbd7f2); /* Xanh pastel */
+    color: #3b749d;
+    transform: rotate(-3deg);
+}
+.cat-button:hover {
+    background: linear-gradient(to right, #87ceeb, #a2d2ff);
+    transform: translateY(-8px) scale(1.05) rotate(3deg);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+}
+
+/* --- Nút cố định quay lại trang chủ --- */
+.button-fixed {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    z-index: 1000;
+    padding: 15px 25px;
+    font-size: 1.1em;
+    background: linear-gradient(to right, #7bcfb6, #9fe6d3); /* Xanh lá cây pastel */
+    color: white;
+    border-radius: 50px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+.button-fixed:hover {
+    background: linear-gradient(to right, #6bb8a1, #8cd9c5);
+    transform: translateY(-5px) scale(1.05); /* Nhẹ nhàng hơn */
+}
+
+
+/* --- Footer --- */
+footer {
+    text-align: center;
+    padding: 30px;
+    margin-top: 60px;
+    background: linear-gradient(to right, var(--accent-color-1), #bbd7f2); /* Xanh pastel */
+    color: white;
+    font-size: 1em;
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.18);
+    border-top-left-radius: 40px; /* Bo tròn nhiều hơn */
+    border-top-right-radius: 40px;
+    position: relative;
+    overflow: hidden;
+}
+.footer-cat {
+    display: block;
+    margin: 0 auto 15px; /* Giữa và đẩy lên trên chữ */
+    height: 120px; /* Lớn hơn */
+    filter: drop-shadow(3px 3px 6px rgba(0,0,0,0.3));
+}
+footer p {
+    font-family: var(--font-subtitle);
+    color: #fff;
+    font-weight: 500;
+    font-size: 1.1em;
+    opacity: 0.9;
+}
+
+
+/* --- Animations (Siêu đáng yêu) --- */
+
+/* Background floating paws */
+@keyframes floatingPaw {
+    0% { transform: translateY(0) rotate(0deg); opacity: 0.05; }
+    50% { transform: translateY(-50px) rotate(15deg); opacity: 0.15; }
+    100% { transform: translateY(0) rotate(0deg); opacity: 0.05; }
+}
+
+/* Header cats float */
+@keyframes floatUpDown {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+    100% { transform: translateY(0); }
+}
+@keyframes floatUpDownWithRotate { /* Mèo trái vừa nổi vừa xoay nhẹ */
+    0% { transform: translateY(0) rotateY(180deg) rotate(0deg); }
+    50% { transform: translateY(-20px) rotateY(180deg) rotate(5deg); }
+    100% { transform: translateY(0) rotateY(180deg) rotate(0deg); }
+}
+
+/* Profile pic rotate and float */
+@keyframes rotateAndFloat {
+    0% { transform: scale(1) rotate(0deg); }
+    25% { transform: scale(1.02) rotate(2deg); }
+    50% { transform: scale(1) rotate(0deg); }
+    75% { transform: scale(1.02) rotate(-2deg); }
+    100% { transform: scale(1) rotate(0deg); }
+}
+
+/* Button scale bounce */
+@keyframes buttonScaleBounce {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+}
+
+/* Section transition animations */
+.fade-in { animation: fadeIn 1s ease-out forwards; }
+.bounce-in { animation: bounceIn 1.2s ease-out forwards; }
+.bounce-in-delay { animation: bounceIn 1.2s ease-out 0.5s forwards; opacity: 0; }
+.zoom-in-delay { animation: zoomIn 0.8s ease-out forwards; opacity: 0; }
+.zoom-in-delay:nth-child(1) { animation-delay: 0.8s; }
+.zoom-in-delay:nth-child(2) { animation-delay: 1.0s; }
+.zoom-in-delay:nth-child(3) { animation-delay: 1.2s; }
+.zoom-in-delay:nth-child(4) { animation-delay: 1.4s; }
+.zoom-in-delay:nth-child(5) { animation-delay: 1.6s; } /* For secret card */
+
+.slide-in-top { animation: slideInTop 0.8s ease-out forwards; }
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes bounceIn {
+    0%, 20%, 40%, 60%, 80%, 100% { transition-timing-function: cubic-bezier(0.215, .61, .355, 1); }
+    0% { opacity: 0; transform: scale3d(.3, .3, .3); }
+    20% { transform: scale3d(1.1, 1.1, 1.1); }
+    40% { transform: scale3d(.9, .9, .9); }
+    60% { opacity: 1; transform: scale3d(1.03, 1.03, 1.03); }
+    80% { transform: scale3d(.97, .97, .97); }
+    100% { opacity: 1; transform: scale3d(1, 1, 1); }
+}
+
+@keyframes zoomIn {
+    from {
+        opacity: 0;
+        transform: scale3d(.3, .3, .3);
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+@keyframes slideInTop {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Specific animations */
+.photo-bounce:hover {
+    animation: photoBounce 0.6s infinite alternate;
+}
+@keyframes photoBounce {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-8px); }
+}
+
+.jump-animation {
+    animation: jump 1s ease-in-out infinite alternate;
+}
+@keyframes jump {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+    100% { transform: translateY(0); }
+}
+
+.pulse-animation {
+    animation: pulse 1.5s infinite alternate;
+}
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.05); opacity: 0.8; }
+}
+
+.spin-grow {
+    animation: spinGrow 2s ease-in-out forwards;
+}
+@keyframes spinGrow {
+    0% { transform: scale(0.5) rotate(0deg); opacity: 0; }
+    100% { transform: scale(1) rotate(360deg); opacity: 1; }
+}
+
+/* ... (phần CSS trước đó) ... */
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    header h1 { font-size: 2.8em; }
+    header .subtitle { font-size: 1.1em; }
+    h2 { font-size: 2.2em; }
+    .profile-pic { width: 140px; height: 140px; }
+    button { padding: 15px 30px; font-size: 1.1em; }
+    .feature-card { padding: 25px; }
+    .feature-card img { width: 80px; height: 80px; }
+    .header-cat-left, .header-cat-right { height: 100px; bottom: -15px; }
+    .footer-cat { height: 90px; }
+    .background-paws div { width: 80px; height: 80px; }
+    .audio-player-cat { width: 60px; height: 60px; }
+    .song-title { font-size: 0.95em; }
+}
+
+@media (max-width: 480px) {
+    header { padding: 30px 15px; border-bottom-left-radius: 30px; border-bottom-right-radius: 30px; }
+    header h1 { font-size: 2.2em; }
+    h2 { font-size: 1.9em; }
+    .card, .content-section { padding: 20px; border-radius: 20px; }
+    .feature-grid { grid-template-columns: 1fr; /* Single column on small screens */ }
+    .photo-grid { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); height: auto; } /* Ảnh nhỏ hơn trên di động */
+    .header-cat-left, .header-cat-right { height: 80px; bottom: -10px; }
+    .profile-pic { width: 100px; height: 100px; margin-bottom: 20px; border-width: 5px; }
+    button { padding: 12px 25px; font-size: 1em; gap: 6px; }
+    .feature-card { padding: 20px; }
+    .feature-card img { width: 60px; height: 60px; margin-bottom: 15px; }
+    .feature-card h3 { font-size: 1.3em; }
+    .feature-card p { font-size: 0.85em; }
+    .audio-player { flex-direction: column; gap: 10px; padding: 15px; } /* Stack audio player vertically */
+    .audio-player-cat { margin-bottom: 10px; }
+    .song-title { font-size: 0.9em; text-align: center; padding-left: 0; }
+    .video-container { padding-bottom: 75%; /* Tăng chiều cao tương đối cho video trên di động */ }
+    .cat-meme-text, .secret-message { font-size: 1em; }
+    .secret-cat-gif { max-width: 95%; }
+    .button-fixed { bottom: 15px; right: 15px; padding: 10px 20px; font-size: 0.9em; }
+    footer { padding: 20px; border-top-left-radius: 30px; border-top-right-radius: 30px; }
+    .footer-cat { height: 70px; margin-bottom: 10px; }
+}
+
+/* Landscape mode for small devices */
+@media (max-height: 400px) and (orientation: landscape) {
+    header { padding: 20px 15px; }
+    header h1 { font-size: 2em; }
+    h2 { font-size: 1.8em; margin-bottom: 15px; }
+    main { margin: 15px auto; }
+    p { font-size: 0.95em; }
+    .card, .content-section { padding: 15px; }
+    .feature-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
+    .photo-grid { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); }
+    .profile-pic { width: 80px; height: 80px; }
+    .header-cat-left, .header-cat-right { height: 60px; bottom: -5px; }
+    .section-cat-icon { width: 80px; height: 80px; margin: 15px auto; }
+    .footer-cat { height: 60px; }
+    button { padding: 10px 20px; font-size: 0.9em; }
+    .button-fixed { bottom: 10px; right: 10px; padding: 8px 15px; font-size: 0.8em; }
+}
