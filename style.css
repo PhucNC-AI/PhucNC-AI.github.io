@@ -1,0 +1,204 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f7f6;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+header {
+    background-color: #d1e7dd; /* Light green */
+    color: #212529; /* Dark text */
+    padding: 20px 0;
+    text-align: center;
+    border-bottom: 3px solid #adc1b4;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+header h1 {
+    margin: 0;
+    font-size: 2.5em;
+    color: #c9006e; /* Pink-purple for emphasis */
+}
+
+header p {
+    font-style: italic;
+    color: #555;
+}
+
+main {
+    padding: 20px;
+    max-width: 900px;
+    margin: 20px auto;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    flex-grow: 1;
+}
+
+section {
+    margin-bottom: 30px;
+    border-bottom: 1px dotted #ccc;
+    padding-bottom: 20px;
+}
+
+section:last-of-type {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+h2 {
+    color: #a72d73; /* Deeper pink-purple */
+    border-bottom: 2px solid #a72d73;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+h3 {
+    color: #3f605f; /* Teal */
+    margin-top: 25px;
+    margin-bottom: 15px;
+}
+
+.input-group {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #333;
+}
+
+input[type="date"],
+textarea {
+    width: calc(100% - 22px); /* Account for padding and border */
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1em;
+    resize: vertical;
+}
+
+button {
+    background-color: #a72d73; /* Pink-purple */
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    display: block;
+    margin: 20px auto 0;
+}
+
+button:hover {
+    background-color: #8c2660; /* Darker pink-purple */
+}
+
+/* Analysis styling */
+.analysis-table table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.analysis-table th,
+.analysis-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.analysis-table th {
+    background-color: #e2f0ee; /* Light teal */
+    color: #3f605f;
+}
+
+.analysis-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+/* Status colors */
+.status-cam {
+    color: #dc3545; /* Red */
+    font-weight: bold;
+}
+
+.status-manh {
+    color: #28a745; /* Green */
+    font-weight: bold;
+}
+
+.status-yeu {
+    color: #ffc107; /* Orange */
+    font-weight: bold;
+}
+
+.status-sieu-vi-tri {
+    color: #c9006e; /* Pink-purple */
+    background-color: #ffeeee;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-weight: bold;
+}
+
+/* Core numbers styling */
+#core-numbers p {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #3f605f;
+    word-break: break-all; /* For long lists of numbers */
+}
+
+#xien-3-sets p {
+    word-break: break-all; /* For long lists of numbers */
+    background-color: #f2fbf9;
+    padding: 10px;
+    border-left: 5px solid #d1e7dd;
+    margin-bottom: 10px;
+}
+
+/* Actual check output */
+.result-item {
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+}
+
+.result-item.hit {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.result-item.miss {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.result-item.summary {
+    font-weight: bold;
+    font-size: 1.1em;
+    background-color: #e2f0ee;
+    border: 1px solid #a72d73;
+}
+
+footer {
+    text-align: center;
+    padding: 20px;
+    margin-top: 30px;
+    background-color: #d1e7dd;
+    color: #555;
+    font-size: 0.9em;
+    border-top: 3px solid #adc1b4;
+    box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+}
