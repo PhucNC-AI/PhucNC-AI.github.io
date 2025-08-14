@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Phân Tích Baccarat Pro 2.0 - P&L Management</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(255, 215, 0, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(240, 84, 84, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(52, 152, 219, 0.03) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Header Section */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 2.8em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #ffd700 0%, #f05454 25%, #667eea 50%, #4fd1c5 75%, #ffd700 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: bold;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+            animation: goldText 3s ease-in-out infinite;
+        }
+
+        @keyframes goldText {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.2); }
+        }
+
+        .disclaimer {
+            color: #ffd700;
+            font-size: 1.2em;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 193, 7, 0.2));
+            border-radius: 30px;
+            border: 2px solid #ffd700;
+            display: inline-block;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            animation: goldShine 3s ease-in-out infinite;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+
+        @keyframes goldShine {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(255, 215, 0, 0.3); }
+            50% { transform: scale(1.05); box-shadow: 0 0 30px rgba(255, 215, 0, 0.5); }
+        }
+
+        /* P&L Management Section - NEW */
+        .pl-management {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 193, 7, 0.05));
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 2px solid rgba(255, 215, 0, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pl-management::before {
+            content: '💰';
+            position: absolute;
+            top: -30px;
+            right: 30px;
+            font-size: 100px;
+            opacity: 0.1;
+        }
+
+        .pl-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .pl-title {
+            font-size: 1.5em;
+            color: #ffd700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pl-main-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .pl-card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.3s;
+        }
+
+        .pl-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .pl-card.profit {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.2), rgba(39, 174, 96, 0.1));
+            border: 2px solid #2ecc71;
+        }
+
+        .pl-card.loss {
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.2), rgba(192, 57, 43, 0.1));
+            border: 2px solid #e74c3c;
+        }
+
+        .pl-label {
+            font-size: 0.9em;
+            color: #aaa;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .pl-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+
+        .pl-value.profit {
+            color: #2ecc71;
+        }
+
+        .pl-value.loss {
+            color: #e74c3c;
+        }
+
+        .pl-change {
+            font-size: 0.85em;
+            color: #999;
+        }
+
+        /* Betting Strategy Section */
+        .betting-strategy {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .strategy-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .strategy-title {
+            font-size: 1.2em;
+            color: #ffd700;
+        }
+
+        .strategy-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .strategy-select {
+            padding: 8px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.95em;
+        }
+
+        .bet-input-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .bet-input-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .bet-input-label {
+            font-size: 0.85em;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+
+        .bet-input {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1.1em;
+            text-align: center;
+        }
+
+        .bet-input:focus {
+            outline: none;
+            border-color: #ffd700;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+
+        /* P&L Chart */
+        .pl-chart-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            height: 300px;
+            position: relative;
+        }
+
+        .pl-chart {
+            width: 100%;
+            height: 250px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-canvas {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            padding: 10px;
+        }
+
+        .chart-bar {
+            flex: 1;
+            max-width: 30px;
+            margin: 0 2px;
+            border-radius: 5px 5px 0 0;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .chart-bar.profit {
+            background: linear-gradient(180deg, #2ecc71, #27ae60);
+        }
+
+        .chart-bar.loss {
+            background: linear-gradient(180deg, #e74c3c, #c0392b);
+        }
+
+        .chart-bar:hover {
+            opacity: 0.8;
+        }
+
+        .chart-tooltip {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8em;
+            white-space: nowrap;
+            display: none;
+        }
+
+        .chart-bar:hover .chart-tooltip {
+            display: block;
+        }
+
+        /* Betting History */
+        .betting-history {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .bet-history-item {
+            display: grid;
+            grid-template-columns: 40px 1fr 100px 100px 100px 100px;
+            gap: 10px;
+            padding: 10px;
+            margin-bottom: 5px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            font-size: 0.9em;
+            align-items: center;
+        }
+
+        .bet-history-item.win {
+            border-left: 3px solid #2ecc71;
+        }
+
+        .bet-history-item.lose {
+            border-left: 3px solid #e74c3c;
+        }
+
+        .bet-history-number {
+            color: #888;
+            font-weight: bold;
+        }
+
+        .bet-history-result {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .bet-history-amount {
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .bet-history-pl {
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .bet-history-pl.profit {
+            color: #2ecc71;
+        }
+
+        .bet-history-pl.loss {
+            color: #e74c3c;
+        }
+
+        .bet-history-balance {
+            text-align: right;
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        /* Strategy Info */
+        .strategy-info {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .strategy-description {
+            font-size: 0.9em;
+            color: #aaa;
+            line-height: 1.5;
+        }
+
+        .strategy-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .strategy-stat {
+            text-align: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .strategy-stat-label {
+            font-size: 0.8em;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .strategy-stat-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .quick-action-btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .quick-action-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .quick-action-btn.danger {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+
+        .quick-action-btn.success {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+        }
+
+        /* Cycle Suggestion Section */
+        .cycle-suggestion {
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.1), rgba(78, 205, 196, 0.1));
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 2px solid rgba(255, 107, 107, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cycle-suggestion::before {
+            content: '🔄';
+            position: absolute;
+            top: -20px;
+            right: 20px;
+            font-size: 80px;
+            opacity: 0.1;
+        }
+
+        .cycle-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .cycle-title {
+            font-size: 1.5em;
+            color: #ff6b6b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .cycle-main {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .cycle-card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.3s;
+        }
+
+        .cycle-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .cycle-card.highlight {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 193, 7, 0.1));
+            border: 2px solid #ffd700;
+            animation: cyclePulse 2s infinite;
+        }
+
+        @keyframes cyclePulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.3); }
+            50% { box-shadow: 0 0 30px rgba(255, 215, 0, 0.6); }
+        }
+
+        /* Input Controls */
+        .input-section {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .main-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        button:hover::before {
+            left: 100%;
+        }
+
+        .btn-player {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: 2px solid #3498db;
+        }
+
+        .btn-banker {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            border: 2px solid #e74c3c;
+        }
+
+        .btn-tie {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            color: white;
+            border: 2px solid #27ae60;
+        }
+
+        .section-title {
+            font-size: 1.4em;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(180deg, #667eea, #f05454);
+            border-radius: 2px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .stat-title {
+            font-size: 0.95em;
+            color: #b0b0b0;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #ffd700, #ffffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        #historyDisplay {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            min-height: 60px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .history-item {
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 0.95em;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .history-item.player-history {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .history-item.banker-history {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .history-item.tie-history {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            color: white;
+        }
+
+        .secondary-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, #34495e, #2c3e50);
+            color: white;
+            border: 2px solid #34495e;
+            padding: 12px 20px;
+            font-size: 1em;
+        }
+
+        .btn-action.warning {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            border: 2px solid #f39c12;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎰 BACCARAT PRO 2.0 - P&L MANAGEMENT 🎰</h1>
+            <p class="disclaimer">
+                💎 HỆ THỐNG QUẢN LÝ VỐN & LỜI LỖ CHUYÊN NGHIỆP 💎
+            </p>
+        </div>
+
+        <!-- P&L Management Section - NEW -->
+        <div class="pl-management">
+            <div class="pl-header">
+                <div class="pl-title">
+                    💰 QUẢN LÝ VỐN & LỜI LỖ (P&L)
+                </div>
+            </div>
+            
+            <div class="pl-main-grid">
+                <div class="pl-card">
+                    <div class="pl-label">Vốn Ban Đầu</div>
+                    <div class="pl-value" id="initialBankroll">$10,000</div>
+                    <div class="pl-change">Ngày bắt đầu: <span id="startDate">-</span></div>
+                </div>
+                
+                <div class="pl-card">
+                    <div class="pl-label">Vốn Hiện Tại</div>
+                    <div class="pl-value" id="currentBankroll">$10,000</div>
+                    <div class="pl-change">Cập nhật: <span id="lastUpdate">-</span></div>
+                </div>
+                
+                <div class="pl-card" id="plCard">
+                    <div class="pl-label">Lời/Lỗ Tổng</div>
+                    <div class="pl-value" id="totalPL">$0</div>
+                    <div class="pl-change"><span id="plPercentage">0%</span></div>
+                </div>
+                
+                <div class="pl-card">
+                    <div class="pl-label">Tổng Đặt Cược</div>
+                    <div class="pl-value" id="totalWagered">$0</div>
+                    <div class="pl-change">Số ván: <span id="totalBets">0</span></div>
+                </div>
+                
+                <div class="pl-card">
+                    <div class="pl-label">Lời/Lỗ Hôm Nay</div>
+                    <div class="pl-value" id="todayPL">$0</div>
+                    <div class="pl-change">Ván hôm nay: <span id="todayBets">0</span></div>
+                </div>
+                
+                <div class="pl-card">
+                    <div class="pl-label">ROI</div>
+                    <div class="pl-value" id="roiValue">0%</div>
+                    <div class="pl-change">Hiệu suất: <span id="performance">-</span></div>
+                </div>
+            </div>
+
+            <!-- Betting Strategy Section -->
+            <div class="betting-strategy">
+                <div class="strategy-header">
+                    <div class="strategy-title">⚙️ Chiến Lược Cược</div>
+                    <div class="strategy-controls">
+                        <select class="strategy-select" id="strategySelect" onchange="changeStrategy()">
+                            <option value="flat">Flat Betting</option>
+                            <option value="martingale">Martingale</option>
+                            <option value="fibonacci">Fibonacci</option>
+                            <option value="paroli">Paroli</option>
+                            <option value="dalembert">D'Alembert</option>
+                            <option value="kelly">Kelly Criterion</option>
+                            <option value="custom">Tùy Chỉnh</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="bet-input-group">
+                    <div class="bet-input-item">
+                        <label class="bet-input-label">Vốn khởi đầu</label>
+                        <input type="number" class="bet-input" id="startingBankroll" value="10000" onchange="updateBankroll()">
+                    </div>
+                    <div class="bet-input-item">
+                        <label class="bet-input-label">Mức cược cơ bản</label>
+                        <input type="number" class="bet-input" id="baseBet" value="100" onchange="updateBetSize()">
+                    </div>
+                    <div class="bet-input-item">
+                        <label class="bet-input-label">Mức cược hiện tại</label>
+                        <input type="number" class="bet-input" id="currentBet" value="100" readonly>
+                    </div>
+                    <div class="bet-input-item">
+                        <label class="bet-input-label">Stop Loss</label>
+                        <input type="number" class="bet-input" id="stopLoss" value="-2000" onchange="updateLimits()">
+                    </div>
+                    <div class="bet-input-item">
+                        <label class="bet-input-label">Take Profit</label>
+                        <input type="number" class="bet-input" id="takeProfit" value="3000" onchange="updateLimits()">
+                    </div>
+                    <div class="bet-input-item">
+                        <label class="bet-input-label">Max Bet</label>
+                        <input type="number" class="bet-input" id="maxBet" value="1000" onchange="updateLimits()">
+                    </div>
+                </div>
+
+                <div class="strategy-info">
+                    <div class="strategy-description" id="strategyDescription">
+                        Flat Betting: Đặt cược số tiền cố định cho mỗi ván, không thay đổi dù thắng hay thua.
+                    </div>
+                    
+                    <div class="strategy-stats">
+                        <div class="strategy-stat">
+                            <div class="strategy-stat-label">Chuỗi hiện tại</div>
+                            <div class="strategy-stat-value" id="currentStreak">0</div>
+                        </div>
+                        <div class="strategy-stat">
+                            <div class="strategy-stat-label">Max thắng</div>
+                            <div class="strategy-stat-value" id="maxWinStreak">0</div>
+                        </div>
+                        <div class="strategy-stat">
+                            <div class="strategy-stat-label">Max thua</div>
+                            <div class="strategy-stat-value" id="maxLoseStreak">0</div>
+                        </div>
+                        <div class="strategy-stat">
+                            <div class="strategy-stat-label">Win rate</div>
+                            <div class="strategy-stat-value" id="winRate">0%</div>
+                        </div>
+                        <div class="strategy-stat">
+                            <div class="strategy-stat-label">Avg Win</div>
+                            <div class="strategy-stat-value" id="avgWin">$0</div>
+                        </div>
+                        <div class="strategy-stat">
+                            <div class="strategy-stat-label">Avg Loss</div>
+                            <div class="strategy-stat-value" id="avgLoss">$0</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="quick-actions">
+                    <button class="quick-action-btn success" onclick="doubleUp()">2X Tăng Cược</button>
+                    <button class="quick-action-btn" onclick="halfBet()">1/2 Giảm Cược</button>
+                    <button class="quick-action-btn" onclick="resetBet()">Reset Cược</button>
+                    <button class="quick-action-btn danger" onclick="resetPL()">Reset P&L</button>
+                </div>
+            </div>
+
+            <!-- P&L Chart -->
+            <div class="pl-chart-container">
+                <h3 style="margin-bottom: 10px; color: #ffd700;">📈 Biểu Đồ Lời/Lỗ</h3>
+                <div class="pl-chart" id="plChart">
+                    <div class="chart-canvas" id="chartCanvas"></div>
+                </div>
+            </div>
+
+            <!-- Betting History -->
+            <div class="betting-history">
+                <h3 style="margin-bottom: 10px; color: #ffd700;">📝 Lịch Sử Cược</h3>
+                <div id="bettingHistory"></div>
+            </div>
+        </div>
+
+        <!-- Cycle Suggestion Section -->
+        <div class="cycle-suggestion">
+            <div class="cycle-header">
+                <div class="cycle-title">
+                    🔄 ĐỀ XUẤT CHU KỲ THẮNG/THUA
+                </div>
+            </div>
+            
+            <div class="cycle-main">
+                <div class="cycle-card highlight">
+                    <div class="cycle-label">Phân Tích Chu Kỳ</div>
+                    <div class="cycle-value" id="cycleStatus">Đang phân tích...</div>
+                </div>
+                
+                <div class="cycle-card">
+                    <div class="cycle-label">Đề Xuất Cược</div>
+                    <div class="cycle-value" id="betSuggestion">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Section -->
+        <div class="input-section">
+            <h2 class="section-title">🎲 Nhập Kết Quả</h2>
+            
+            <div class="main-buttons">
+                <button class="btn-player" onclick="addResult('P')">
+                    <span style="font-size: 1.5em;">👤</span><br>
+                    PLAYER
+                </button>
+                <button class="btn-banker" onclick="addResult('B')">
+                    <span style="font-size: 1.5em;">🏦</span><br>
+                    BANKER
+                </button>
+                <button class="btn-tie" onclick="addResult('T')">
+                    <span style="font-size: 1.5em;">🤝</span><br>
+                    TIE
+                </button>
+            </div>
+            
+            <div class="secondary-buttons">
+                <button class="btn-action" onclick="undoLast()">↩️ Hoàn Tác</button>
+                <button class="btn-action warning" onclick="clearHistory()">🗑️ Xóa Tất Cả</button>
+                <button class="btn-action" onclick="generateRandom()">🎲 Demo (30 ván)</button>
+            </div>
+            
+            <div id="historyDisplay"></div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-title">📈 Tổng Ván</div>
+                <div class="stat-value" id="totalGames">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">👤 Player Win</div>
+                <div class="stat-value" id="playerRate">0%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">🏦 Banker Win</div>
+                <div class="stat-value" id="bankerRate">0%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">🤝 Tie Rate</div>
+                <div class="stat-value" id="tieRate">0%</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== P&L MANAGEMENT SYSTEM =====
+        class PLManagementSystem {
+            constructor() {
+                this.initialBankroll = 10000;
+                this.currentBankroll = 10000;
+                this.baseBet = 100;
+                this.currentBet = 100;
+                this.strategy = 'flat';
+                this.betHistory = [];
+                this.plHistory = [];
+                this.currentStreak = 0;
+                this.maxWinStreak = 0;
+                this.maxLoseStreak = 0;
+                this.totalWagered = 0;
+                this.wins = 0;
+                this.losses = 0;
+                this.ties = 0;
+                this.stopLoss = -2000;
+                this.takeProfit = 3000;
+                this.maxBet = 1000;
+                this.fibonacciSequence = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55];
+                this.fibonacciIndex = 0;
+                this.dalembertUnit = 0;
+                this.paroliCount = 0;
+                this.lastPrediction = null;
+                this.startDate = new Date();
+                this.todayPL = 0;
+                this.todayBets = 0;
+                this.todayDate = new Date().toDateString();
+            }
+
+            placeBet(prediction, actual) {
+                // Check limits
+                if (this.checkLimits()) {
+                    alert('Đã đạt giới hạn Stop Loss hoặc Take Profit!');
+                    return null;
+                }
+
+                // Calculate bet amount based on strategy
+                this.calculateBetAmount();
+                
+                // Determine win/loss
+                const betResult = this.determineBetResult(prediction, actual);
+                
+                // Calculate P&L
+                const pl = this.calculatePL(betResult, actual);
+                
+                // Update bankroll
+                this.currentBankroll += pl;
+                this.totalWagered += this.currentBet;
+                
+                // Update history
+                const betRecord = {
+                    number: this.betHistory.length + 1,
+                    prediction: prediction,
+                    actual: actual,
+                    betAmount: this.currentBet,
+                    result: betResult,
+                    pl: pl,
+                    balance: this.currentBankroll,
+                    timestamp: new Date()
+                };
+                
+                this.betHistory.push(betRecord);
+                this.plHistory.push(this.currentBankroll - this.initialBankroll);
+                
+                // Update streaks
+                this.updateStreaks(betResult);
+                
+                // Update today's stats
+                const today = new Date().toDateString();
+                if (today === this.todayDate) {
+                    this.todayPL += pl;
+                    this.todayBets++;
+                } else {
+                    this.todayDate = today;
+                    this.todayPL = pl;
+                    this.todayBets = 1;
+                }
+                
+                // Update strategy-specific variables
+                this.updateStrategy(betResult);
+                
+                return betRecord;
+            }
+
+            calculateBetAmount() {
+                switch(this.strategy) {
+                    case 'martingale':
+                        if (this.betHistory.length > 0 && 
+                            this.betHistory[this.betHistory.length - 1].result === 'lose') {
+                            this.currentBet = Math.min(this.currentBet * 2, this.maxBet);
+                        } else {
+                            this.currentBet = this.baseBet;
+                        }
+                        break;
+                        
+                    case 'fibonacci':
+                        if (this.betHistory.length > 0) {
+                            if (this.betHistory[this.betHistory.length - 1].result === 'lose') {
+                                this.fibonacciIndex = Math.min(this.fibonacciIndex + 1, this.fibonacciSequence.length - 1);
+                            } else {
+                                this.fibonacciIndex = Math.max(0, this.fibonacciIndex - 2);
+                            }
+                        }
+                        this.currentBet = Math.min(this.baseBet * this.fibonacciSequence[this.fibonacciIndex], this.maxBet);
+                        break;
+                        
+                    case 'paroli':
+                        if (this.betHistory.length > 0 && 
+                            this.betHistory[this.betHistory.length - 1].result === 'win') {
+                            this.paroliCount++;
+                            if (this.paroliCount < 3) {
+                                this.currentBet = Math.min(this.currentBet * 2, this.maxBet);
+                            } else {
+                                this.currentBet = this.baseBet;
+                                this.paroliCount = 0;
+                            }
+                        } else {
+                            this.currentBet = this.baseBet;
+                            this.paroliCount = 0;
+                        }
+                        break;
+                        
+                    case 'dalembert':
+                        if (this.betHistory.length > 0) {
+                            if (this.betHistory[this.betHistory.length - 1].result === 'lose') {
+                                this.dalembertUnit++;
+                            } else if (this.dalembertUnit > 0) {
+                                this.dalembertUnit--;
+                            }
+                        }
+                        this.currentBet = Math.min(this.baseBet + (this.dalembertUnit * 10), this.maxBet);
+                        break;
+                        
+                    case 'kelly':
+                        // Kelly Criterion: f* = (bp - q) / b
+                        const winProb = this.wins / Math.max(1, this.wins + this.losses);
+                        const b = 0.95; // Payout ratio for Player/Banker
+                        const p = winProb;
+                        const q = 1 - p;
+                        const kelly = Math.max(0, (b * p - q) / b);
+                        this.currentBet = Math.min(Math.round(this.currentBankroll * kelly * 0.25), this.maxBet); // Use 25% Kelly
+                        this.currentBet = Math.max(this.baseBet, this.currentBet);
+                        break;
+                        
+                    case 'flat':
+                    default:
+                        this.currentBet = this.baseBet;
+                        break;
+                }
+            }
+
+            determineBetResult(prediction, actual) {
+                if (!prediction) return 'skip';
+                return prediction === actual ? 'win' : 'lose';
+            }
+
+            calculatePL(result, actual) {
+                if (result === 'skip') return 0;
+                
+                if (result === 'win') {
+                    if (actual === 'T') {
+                        return this.currentBet * 8; // Tie pays 8:1
+                    } else if (actual === 'B') {
+                        return this.currentBet * 0.95; // Banker commission
+                    } else {
+                        return this.currentBet; // Player pays 1:1
+                    }
+                } else {
+                    return -this.currentBet;
+                }
+            }
+
+            updateStreaks(result) {
+                if (result === 'win') {
+                    this.wins++;
+                    if (this.currentStreak >= 0) {
+                        this.currentStreak++;
+                    } else {
+                        this.currentStreak = 1;
+                    }
+                    this.maxWinStreak = Math.max(this.maxWinStreak, this.currentStreak);
+                } else if (result === 'lose') {
+                    this.losses++;
+                    if (this.currentStreak <= 0) {
+                        this.currentStreak--;
+                    } else {
+                        this.currentStreak = -1;
+                    }
+                    this.maxLoseStreak = Math.max(this.maxLoseStreak, Math.abs(this.currentStreak));
+                }
+            }
+
+            updateStrategy(result) {
+                // Strategy-specific updates are handled in calculateBetAmount
+            }
+
+            checkLimits() {
+                const currentPL = this.currentBankroll - this.initialBankroll;
+                return currentPL <= this.stopLoss || currentPL >= this.takeProfit;
+            }
+
+            getStatistics() {
+                const totalBets = this.wins + this.losses;
+                const winRate = totalBets > 0 ? (this.wins / totalBets) * 100 : 0;
+                const totalPL = this.currentBankroll - this.initialBankroll;
+                const roi = this.totalWagered > 0 ? (totalPL / this.totalWagered) * 100 : 0;
+                
+                // Calculate average win/loss
+                let totalWinAmount = 0;
+                let totalLossAmount = 0;
+                let winCount = 0;
+                let lossCount = 0;
+                
+                this.betHistory.forEach(bet => {
+                    if (bet.result === 'win') {
+                        totalWinAmount += bet.pl;
+                        winCount++;
+                    } else if (bet.result === 'lose') {
+                        totalLossAmount += Math.abs(bet.pl);
+                        lossCount++;
+                    }
+                });
+                
+                const avgWin = winCount > 0 ? totalWinAmount / winCount : 0;
+                const avgLoss = lossCount > 0 ? totalLossAmount / lossCount : 0;
+                
+                return {
+                    totalPL: totalPL,
+                    plPercentage: (totalPL / this.initialBankroll) * 100,
+                    roi: roi,
+                    winRate: winRate,
+                    totalBets: totalBets,
+                    wins: this.wins,
+                    losses: this.losses,
+                    avgWin: avgWin,
+                    avgLoss: avgLoss,
+                    maxWinStreak: this.maxWinStreak,
+                    maxLoseStreak: this.maxLoseStreak,
+                    currentStreak: this.currentStreak,
+                    totalWagered: this.totalWagered,
+                    todayPL: this.todayPL,
+                    todayBets: this.todayBets
+                };
+            }
+
+            reset() {
+                this.currentBankroll = this.initialBankroll;
+                this.currentBet = this.baseBet;
+                this.betHistory = [];
+                this.plHistory = [];
+                this.currentStreak = 0;
+                this.maxWinStreak = 0;
+                this.maxLoseStreak = 0;
+                this.totalWagered = 0;
+                this.wins = 0;
+                this.losses = 0;
+                this.ties = 0;
+                this.fibonacciIndex = 0;
+                this.dalembertUnit = 0;
+                this.paroliCount = 0;
+                this.todayPL = 0;
+                this.todayBets = 0;
+            }
+        }
+
+        // ===== GLOBAL VARIABLES =====
+        let history = [];
+        let plManager = new PLManagementSystem();
+        let lastPrediction = null;
+
+        // ===== MAIN FUNCTIONS =====
+        function addResult(result) {
+            // Add to history
+            history.push(result);
+            
+            // Place bet with last prediction
+            const betResult = plManager.placeBet(lastPrediction, result);
+            
+            // Update displays
+            updateDisplay();
+            updatePLDisplay();
+            updateBettingHistory();
+            updateChart();
+            
+            // Make new prediction for next round
+            makePrediction();
+        }
+
+        function makePrediction() {
+            if (history.length < 3) {
+                lastPrediction = null;
+                return;
+            }
+            
+            // Simple prediction based on recent trend
+            const recent = history.slice(-5);
+            const pCount = recent.filter(r => r === 'P').length;
+            const bCount = recent.filter(r => r === 'B').length;
+            
+            if (pCount > bCount) {
+                lastPrediction = 'P';
+            } else if (bCount > pCount) {
+                lastPrediction = 'B';
+            } else {
+                lastPrediction = Math.random() > 0.5 ? 'P' : 'B';
+            }
+            
+            updateBetSuggestion();
+        }
+
+        function updateDisplay() {
+            // Update history display
+            const historyDiv = document.getElementById('historyDisplay');
+            historyDiv.innerHTML = '';
+            
+            history.slice(-20).forEach((result, index) => {
+                const item = document.createElement('div');
+                item.className = `history-item ${result === 'P' ? 'player-history' : result === 'B' ? 'banker-history' : 'tie-history'}`;
+                item.textContent = `${index + 1}. ${result === 'P' ? 'Player' : result === 'B' ? 'Banker' : 'Tie'}`;
+                historyDiv.appendChild(item);
+            });
+            
+            // Update statistics
+            const total = history.length;
+            const pCount = history.filter(r => r === 'P').length;
+            const bCount = history.filter(r => r === 'B').length;
+            const tCount = history.filter(r => r === 'T').length;
+            
+            document.getElementById('totalGames').textContent = total;
+            document.getElementById('playerRate').textContent = total > 0 ? `${((pCount/total)*100).toFixed(1)}%` : '0%';
+            document.getElementById('bankerRate').textContent = total > 0 ? `${((bCount/total)*100).toFixed(1)}%` : '0%';
+            document.getElementById('tieRate').textContent = total > 0 ? `${((tCount/total)*100).toFixed(1)}%` : '0%';
+        }
+
+        function updatePLDisplay() {
+            const stats = plManager.getStatistics();
+            
+            // Update P&L cards
+            document.getElementById('initialBankroll').textContent = `$${plManager.initialBankroll.toLocaleString()}`;
+            document.getElementById('currentBankroll').textContent = `$${plManager.currentBankroll.toLocaleString()}`;
+            document.getElementById('totalPL').textContent = `$${stats.totalPL > 0 ? '+' : ''}${stats.totalPL.toLocaleString()}`;
+            document.getElementById('plPercentage').textContent = `${stats.plPercentage > 0 ? '+' : ''}${stats.plPercentage.toFixed(2)}%`;
+            document.getElementById('totalWagered').textContent = `$${stats.totalWagered.toLocaleString()}`;
+            document.getElementById('totalBets').textContent = stats.totalBets;
+            document.getElementById('todayPL').textContent = `$${stats.todayPL > 0 ? '+' : ''}${stats.todayPL.toLocaleString()}`;
+            document.getElementById('todayBets').textContent = stats.todayBets;
+            document.getElementById('roiValue').textContent = `${stats.roi > 0 ? '+' : ''}${stats.roi.toFixed(2)}%`;
+            
+            // Update colors
+            const plCard = document.getElementById('plCard');
+            if (stats.totalPL > 0) {
+                plCard.classList.add('profit');
+                plCard.classList.remove('loss');
+                document.getElementById('totalPL').classList.add('profit');
+                document.getElementById('totalPL').classList.remove('loss');
+            } else if (stats.totalPL < 0) {
+                plCard.classList.add('loss');
+                plCard.classList.remove('profit');
+                document.getElementById('totalPL').classList.add('loss');
+                document.getElementById('totalPL').classList.remove('profit');
+            }
+            
+            // Update strategy stats
+            document.getElementById('currentStreak').textContent = stats.currentStreak;
+            document.getElementById('maxWinStreak').textContent = stats.maxWinStreak;
+            document.getElementById('maxLoseStreak').textContent = stats.maxLoseStreak;
+            document.getElementById('winRate').textContent = `${stats.winRate.toFixed(1)}%`;
+            document.getElementById('avgWin').textContent = `$${Math.round(stats.avgWin).toLocaleString()}`;
+            document.getElementById('avgLoss').textContent = `$${Math.round(stats.avgLoss).toLocaleString()}`;
+            
+            // Update bet displays
+            document.getElementById('currentBet').value = plManager.currentBet;
+            
+            // Update dates
+            document.getElementById('startDate').textContent = plManager.startDate.toLocaleDateString();
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+            
+            // Update performance
+            const performance = stats.roi > 10 ? 'Xuất sắc' : 
+                              stats.roi > 5 ? 'Tốt' : 
+                              stats.roi > 0 ? 'Khá' : 
+                              stats.roi > -5 ? 'Trung bình' : 'Cần cải thiện';
+            document.getElementById('performance').textContent = performance;
+        }
+
+        function updateBettingHistory() {
+            const historyDiv = document.getElementById('bettingHistory');
+            historyDiv.innerHTML = '';
+            
+            // Show last 10 bets
+            const recentBets = plManager.betHistory.slice(-10).reverse();
+            
+            recentBets.forEach(bet => {
+                const item = document.createElement('div');
+                item.className = `bet-history-item ${bet.result}`;
+                
+                item.innerHTML = `
+                    <div class="bet-history-number">#${bet.number}</div>
+                    <div class="bet-history-result">
+                        <span>${bet.prediction || '-'} → ${bet.actual}</span>
+                        <span style="color: ${bet.result === 'win' ? '#2ecc71' : '#e74c3c'}">
+                            ${bet.result === 'win' ? '✓' : '✗'}
+                        </span>
+                    </div>
+                    <div class="bet-history-amount">$${bet.betAmount}</div>
+                    <div class="bet-history-pl ${bet.pl > 0 ? 'profit' : 'loss'}">
+                        ${bet.pl > 0 ? '+' : ''}$${Math.round(bet.pl)}
+                    </div>
+                    <div class="bet-history-balance">$${Math.round(bet.balance).toLocaleString()}</div>
+                `;
+                
+                historyDiv.appendChild(item);
+            });
+        }
+
+        function updateChart() {
+            const canvas = document.getElementById('chartCanvas');
+            canvas.innerHTML = '';
+            
+            // Get last 20 P&L points
+            const chartData = plManager.plHistory.slice(-20);
+            
+            if (chartData.length === 0) return;
+            
+            const maxValue = Math.max(...chartData.map(Math.abs));
+            
+            chartData.forEach((value, index) => {
+                const bar = document.createElement('div');
+                bar.className = `chart-bar ${value >= 0 ? 'profit' : 'loss'}`;
+                
+                const height = Math.abs(value) / (maxValue || 1) * 100;
+                bar.style.height = `${height}%`;
+                
+                if (value >= 0) {
+                    bar.style.alignSelf = 'flex-end';
+                } else {
+                    bar.style.alignSelf = 'flex-start';
+                    bar.style.transform = 'scaleY(-1)';
+                }
+                
+                // Add tooltip
+                const tooltip = document.createElement('div');
+                tooltip.className = 'chart-tooltip';
+                tooltip.textContent = `$${value > 0 ? '+' : ''}${Math.round(value)}`;
+                bar.appendChild(tooltip);
+                
+                canvas.appendChild(bar);
+            });
+        }
+
+        function updateBetSuggestion() {
+            const suggestion = document.getElementById('betSuggestion');
+            const cycleStatus = document.getElementById('cycleStatus');
+            
+            if (lastPrediction) {
+                suggestion.textContent = `Đề xuất: ${lastPrediction === 'P' ? 'PLAYER' : 'BANKER'}`;
+                cycleStatus.textContent = `Cược $${plManager.currentBet}`;
+            } else {
+                suggestion.textContent = 'Chờ dữ liệu...';
+                cycleStatus.textContent = 'Đang phân tích...';
+            }
+        }
+
+        // ===== STRATEGY FUNCTIONS =====
+        function changeStrategy() {
+            const select = document.getElementById('strategySelect');
+            plManager.strategy = select.value;
+            
+            const descriptions = {
+                'flat': 'Flat Betting: Đặt cược số tiền cố định cho mỗi ván, không thay đổi dù thắng hay thua.',
+                'martingale': 'Martingale: Gấp đôi cược sau mỗi lần thua, reset về cược ban đầu khi thắng.',
+                'fibonacci': 'Fibonacci: Tăng cược theo dãy Fibonacci khi thua, giảm 2 bước khi thắng.',
+                'paroli': 'Paroli: Gấp đôi cược khi thắng (tối đa 3 lần), reset khi thua.',
+                'dalembert': "D'Alembert: Tăng 1 đơn vị khi thua, giảm 1 đơn vị khi thắng.",
+                'kelly': 'Kelly Criterion: Tính cược dựa trên xác suất thắng và tỷ lệ trả thưởng.',
+                'custom': 'Tùy Chỉnh: Điều chỉnh mức cược theo ý muốn.'
+            };
+            
+            document.getElementById('strategyDescription').textContent = descriptions[plManager.strategy];
+            
+            // Reset strategy-specific variables
+            plManager.fibonacciIndex = 0;
+            plManager.dalembertUnit = 0;
+            plManager.paroliCount = 0;
+            
+            // Recalculate bet
+            plManager.calculateBetAmount();
+            document.getElementById('currentBet').value = plManager.currentBet;
+        }
+
+        function updateBankroll() {
+            const value = parseInt(document.getElementById('startingBankroll').value);
+            if (value > 0) {
+                plManager.initialBankroll = value;
+                plManager.currentBankroll = value;
+                plManager.reset();
+                updatePLDisplay();
+            }
+        }
+
+        function updateBetSize() {
+            const value = parseInt(document.getElementById('baseBet').value);
+            if (value > 0) {
+                plManager.baseBet = value;
+                plManager.currentBet = value;
+                document.getElementById('currentBet').value = value;
+            }
+        }
+
+        function updateLimits() {
+            plManager.stopLoss = parseInt(document.getElementById('stopLoss').value);
+            plManager.takeProfit = parseInt(document.getElementById('takeProfit').value);
+            plManager.maxBet = parseInt(document.getElementById('maxBet').value);
+        }
+
+        function doubleUp() {
+            plManager.currentBet = Math.min(plManager.currentBet * 2, plManager.maxBet);
+            document.getElementById('currentBet').value = plManager.currentBet;
+        }
+
+        function halfBet() {
+            plManager.currentBet = Math.max(Math.round(plManager.currentBet / 2), plManager.baseBet);
+            document.getElementById('currentBet').value = plManager.currentBet;
+        }
+
+        function resetBet() {
+            plManager.currentBet = plManager.baseBet;
+            document.getElementById('currentBet').value = plManager.currentBet;
+        }
+
+        function resetPL() {
+            if (confirm('Bạn có chắc muốn reset toàn bộ P&L?')) {
+                plManager.reset();
+                updatePLDisplay();
+                updateBettingHistory();
+                updateChart();
+            }
+        }
+
+        function undoLast() {
+            if (history.length > 0) {
+                history.pop();
+                if (plManager.betHistory.length > 0) {
+                    const lastBet = plManager.betHistory.pop();
+                    plManager.currentBankroll -= lastBet.pl;
+                    plManager.totalWagered -= lastBet.betAmount;
+                    
+                    if (lastBet.result === 'win') {
+                        plManager.wins--;
+                    } else if (lastBet.result === 'lose') {
+                        plManager.losses--;
+                    }
+                    
+                    plManager.plHistory.pop();
+                }
+                updateDisplay();
+                updatePLDisplay();
+                updateBettingHistory();
+                updateChart();
+                makePrediction();
+            }
+        }
+
+        function clearHistory() {
+            if (confirm('Xóa toàn bộ lịch sử?')) {
+                history = [];
+                plManager.reset();
+                lastPrediction = null;
+                updateDisplay();
+                updatePLDisplay();
+                updateBettingHistory();
+                updateChart();
+                updateBetSuggestion();
+            }
+        }
+
+        function generateRandom() {
+            clearHistory();
+            const results = ['P', 'B', 'T'];
+            const weights = [0.45, 0.45, 0.1]; // Realistic probabilities
+            
+            for (let i = 0; i < 30; i++) {
+                const rand = Math.random();
+                let result;
+                if (rand < weights[0]) result = 'P';
+                else if (rand < weights[0] + weights[1]) result = 'B';
+                else result = 'T';
+                
+                // Make prediction before adding result
+                makePrediction();
+                
+                // Add result
+                history.push(result);
+                
+                // Place bet
+                plManager.placeBet(lastPrediction, result);
+            }
+            
+            updateDisplay();
+            updatePLDisplay();
+            updateBettingHistory();
+            updateChart();
+            makePrediction();
+        }
+
+        // Initialize on load
+        window.onload = function() {
+            updatePLDisplay();
+            updateBetSuggestion();
+            
+            // Set initial values
+            document.getElementById('startingBankroll').value = plManager.initialBankroll;
+            document.getElementById('baseBet').value = plManager.baseBet;
+            document.getElementById('currentBet').value = plManager.currentBet;
+            document.getElementById('stopLoss').value = plManager.stopLoss;
+            document.getElementById('takeProfit').value = plManager.takeProfit;
+            document.getElementById('maxBet').value = plManager.maxBet;
+        };
+    </script>
+</body>
+</html>
