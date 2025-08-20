@@ -459,6 +459,51 @@
             font-style: italic;
         }
 
+        /* NEW: Styles for Streak Prediction Stats Chart */
+        .stats-chart-container {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 10px;
+        }
+        .stats-chart-bar-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100px;
+        }
+        .stats-chart-bar {
+            width: 50px;
+            height: 100px;
+            background-color: rgba(255,255,255,0.05);
+            border-radius: 5px;
+            display: flex;
+            align-items: flex-end;
+        }
+        .stats-chart-fill {
+            width: 100%;
+            border-radius: 5px;
+            transition: height 0.5s ease;
+        }
+        .stats-chart-fill.correct {
+            background: linear-gradient(180deg, #3498db, #2980b9);
+        }
+        .stats-chart-fill.incorrect {
+            background: linear-gradient(180deg, #e74c3c, #c0392b);
+        }
+        .stats-chart-label {
+            margin-top: 8px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        .stats-chart-value {
+            font-size: 0.8em;
+            color: #aaa;
+        }
+
 
         .accuracy-history {
             margin-top: 20px;
@@ -1111,6 +1156,14 @@
                     <div id="streakPredictionReason" class="streak-prediction-reason"></div>
                 </div>
 
+                <!-- NEW: Streak Prediction Stats Chart -->
+                <div class="streak-prediction-stats" style="margin-top: 20px; margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 10px; color: #aaa; font-size: 0.95em; text-align: center;">📊 Thống Kê Đề Xuất Chuỗi</h4>
+                    <div class="stats-chart-container" id="streakStatsChart">
+                        <!-- Chart will be rendered here by JS -->
+                    </div>
+                </div>
+
                 <div class="accuracy-streak-display" style="margin-top: 20px;">
                     <h4 style="margin-bottom: 10px; color: #aaa; font-size: 0.95em;">🔗 Chuỗi Đúng/Sai (Đúng / Sai)</h4>
                     <div id="accuracyStreakSequence" class="streak-sequence"></div>
@@ -1459,6 +1512,59 @@
             }
         }
 
+        // NEW: Streak Prediction Tracker
+        class StreakPredictionTracker {
+            constructor() {
+                this.history = []; // { prediction: 'ĐÚNG'/'SAI', correct: true/false }
+                this.currentPrediction = 'KHÔNG';
+            }
+
+            recordPrediction(recommendation) {
+                if (recommendation === 'ĐÚNG' || recommendation === 'SAI') {
+                    this.currentPrediction = recommendation;
+                } else {
+                    this.currentPrediction = 'KHÔNG';
+                }
+            }
+
+            recordOutcome(isMainPredictionCorrect) {
+                if (this.currentPrediction === 'KHÔNG') {
+                    return; // Don't record stats for non-predictions
+                }
+
+                let wasStreakPredictionCorrect = false;
+                if (this.currentPrediction === 'ĐÚNG' && isMainPredictionCorrect) {
+                    wasStreakPredictionCorrect = true;
+                } else if (this.currentPrediction === 'SAI' && !isMainPredictionCorrect) {
+                    wasStreakPredictionCorrect = true;
+                }
+                
+                this.history.push({
+                    prediction: this.currentPrediction,
+                    correct: wasStreakPredictionCorrect
+                });
+
+                this.currentPrediction = 'KHÔNG';
+            }
+
+            getStats() {
+                const total = this.history.length;
+                if (total === 0) {
+                    return { correct: 0, incorrect: 0, total: 0, correctPercent: 0, incorrectPercent: 0 };
+                }
+                const correct = this.history.filter(h => h.correct).length;
+                const incorrect = total - correct;
+
+                return {
+                    correct: correct,
+                    incorrect: incorrect,
+                    total: total,
+                    correctPercent: (correct / total) * 100,
+                    incorrectPercent: (incorrect / total) * 100
+                };
+            }
+        }
+
         // ===== THUẬT TOÁN 142857 =====
         class MagicNumber142857 {
             constructor() {
@@ -1662,14 +1768,25 @@
                 this.magicNumber = new MagicNumber142857();
                 this.patternSystem = new PatternRecognitionSystem();
                 this.accuracyTracker = new AccuracyTracker();
-                this.streakPredictor = new StreakPredictor(); // NEW
+                this.streakPredictor = new StreakPredictor();
+                this.streakPredictionTracker = new StreakPredictionTracker(); // NEW
                 this.history = [];
                 this.predictions = [];
                 this.confidenceHistory = [];
             }
 
             addResult(result) {
-                this.accuracyTracker.recordActualResult(result);
+                // This records the outcome for the prediction made in the previous step
+                this.accuracyTracker.recordActualResult(result); 
+
+                // Now that the accuracy history is updated, get the outcome of that last prediction
+                const wasLastPredictionCorrect = this.accuracyTracker.accuracyHistory.length > 0 ? 
+                    this.accuracyTracker.accuracyHistory[this.accuracyTracker.accuracyHistory.length - 1] === 1 : false;
+
+                // Record the outcome for the streak prediction that was tied to that main prediction
+                this.streakPredictionTracker.recordOutcome(wasLastPredictionCorrect);
+
+                // Continue with the rest
                 this.history.push(result);
                 this.magicNumber.getNextPhase();
             }
@@ -1681,7 +1798,7 @@
                         confidence: 0,
                         patterns: { detected: [], warnings: [] },
                         magic: null,
-                        streakPrediction: { recommendation: 'KHÔNG', reason: 'Cần thêm dữ liệu' } // NEW
+                        streakPrediction: { recommendation: 'KHÔNG', reason: 'Cần thêm dữ liệu' }
                     };
                     this.accuracyTracker.makePrediction(initialResult.prediction);
                     return initialResult;
@@ -1689,7 +1806,10 @@
 
                 const patterns = this.patternSystem.analyzePatterns(this.history);
                 const magicPred = this.magicNumber.calculatePrediction(this.history);
-                const streakPrediction = this.streakPredictor.analyze(this.accuracyTracker.accuracyHistory); // NEW
+                const streakPrediction = this.streakPredictor.analyze(this.accuracyTracker.accuracyHistory);
+                
+                // Record the streak prediction before returning the analysis
+                this.streakPredictionTracker.recordPrediction(streakPrediction.recommendation);
                 
                 let finalPrediction = { P: 0, B: 0, T: 0 };
                 let weights = 0;
@@ -1735,7 +1855,7 @@
                     confidence: confidence,
                     patterns: patterns,
                     magic: magicPred,
-                    streakPrediction: streakPrediction // NEW
+                    streakPrediction: streakPrediction
                 };
             }
 
@@ -1913,6 +2033,7 @@
             updateAccuracyChart();
             updatePredictionHistory();
             updateAccuracyStreakSequence();
+            updateStreakPredictionStatsChart(); // NEW
         }
 
         function updateAccuracyChart() {
@@ -2040,10 +2161,9 @@
             updateWarnings(analysis.patterns.warnings);
             updateMagicNumber(analysis.magic);
             updateConfidenceMeter(analysis.confidence);
-            updateStreakPrediction(analysis.streakPrediction); // NEW
+            updateStreakPrediction(analysis.streakPrediction);
         }
         
-        // NEW: Function to update the streak prediction UI
         function updateStreakPrediction(prediction) {
             const predDiv = document.getElementById('streakPrediction');
             const reasonDiv = document.getElementById('streakPredictionReason');
@@ -2065,6 +2185,34 @@
                     break;
             }
             reasonDiv.textContent = prediction.reason;
+        }
+
+        // NEW: Function to update the streak prediction stats chart
+        function updateStreakPredictionStatsChart() {
+            const stats = analyzer.streakPredictionTracker.getStats();
+            const chartDiv = document.getElementById('streakStatsChart');
+
+            if (stats.total === 0) {
+                chartDiv.innerHTML = '<div style="text-align: center; color: #888; width: 100%;">Chưa có dữ liệu thống kê</div>';
+                return;
+            }
+
+            chartDiv.innerHTML = `
+                <div class="stats-chart-bar-wrapper">
+                    <div class="stats-chart-bar">
+                        <div class="stats-chart-fill correct" style="height: ${stats.correctPercent.toFixed(1)}%;" title="${stats.correct} Đúng"></div>
+                    </div>
+                    <div class="stats-chart-label" style="color: #3498db;">ĐÚNG</div>
+                    <div class="stats-chart-value">${stats.correct} (${stats.correctPercent.toFixed(1)}%)</div>
+                </div>
+                <div class="stats-chart-bar-wrapper">
+                    <div class="stats-chart-bar">
+                        <div class="stats-chart-fill incorrect" style="height: ${stats.incorrectPercent.toFixed(1)}%;" title="${stats.incorrect} Sai"></div>
+                    </div>
+                    <div class="stats-chart-label" style="color: #e74c3c;">SAI</div>
+                    <div class="stats-chart-value">${stats.incorrect} (${stats.incorrectPercent.toFixed(1)}%)</div>
+                </div>
+            `;
         }
 
         function updatePredictions(prediction, overallConfidence) {
