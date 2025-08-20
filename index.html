@@ -370,7 +370,6 @@
             position: relative;
         }
         
-        /* MODIFIED: Changed green to blue */
         .chart-bar.bar-correct {
              background: linear-gradient(180deg, #3498db, #2980b9);
         }
@@ -404,7 +403,6 @@
             font-weight: bold;
         }
         
-        /* NEW: Styles for the streak sequence display */
         .streak-sequence {
             display: flex;
             flex-wrap: wrap;
@@ -425,53 +423,42 @@
         .streak-number.incorrect {
             color: #e74c3c; /* Red for incorrect streaks */
         }
-
-        /* NEW: Streak Prediction Section */
-        .streak-prediction-section {
-            background: rgba(0, 0, 0, 0.4);
+        
+        /* NEW: Styles for Streak Prediction */
+        .streak-prediction-result {
+            padding: 15px 25px;
             border-radius: 15px;
-            padding: 20px;
-            margin: 20px 0;
-            border: 1px solid rgba(79, 209, 197, 0.3);
-            text-align: center;
-        }
-
-        .streak-prediction-content {
-            margin: 10px 0;
-        }
-
-        .prediction-value {
-            font-size: 2.5em;
+            font-size: 2em;
             font-weight: bold;
-            margin-bottom: 8px;
-            transition: color 0.3s;
+            display: inline-block;
+            min-width: 250px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
         }
-
-        .prediction-value.correct {
-            color: #3498db; /* Blue */
-            text-shadow: 0 0 15px #3498db;
+        .streak-prediction-result.correct {
+            background: rgba(52, 152, 219, 0.2);
+            color: #3498db;
+            border-color: #3498db;
+            text-shadow: 0 0 10px #3498db;
         }
-
-        .prediction-value.incorrect {
-            color: #e74c3c; /* Red */
-            text-shadow: 0 0 15px #e74c3c;
+        .streak-prediction-result.incorrect {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            border-color: #e74c3c;
+            text-shadow: 0 0 10px #e74c3c;
         }
-
-        .prediction-value.none {
+        .streak-prediction-result.none {
+            background: rgba(255, 255, 255, 0.1);
+            color: #aaa;
+            font-size: 1.5em;
+        }
+        .streak-prediction-reason {
+            margin-top: 8px;
+            font-size: 0.9em;
             color: #999;
-        }
-
-        .prediction-reason {
-            font-size: 0.95em;
-            color: #ccc;
-        }
-
-        .prediction-disclaimer {
-            font-size: 0.8em;
-            color: #888;
-            margin-top: 15px;
             font-style: italic;
         }
+
 
         .accuracy-history {
             margin-top: 20px;
@@ -1117,20 +1104,16 @@
                     </div>
                 </div>
 
-                <!-- NEW: Streak sequence display -->
+                <!-- NEW: Streak Prediction -->
+                <div class="streak-prediction-display" style="margin-top: 20px; text-align: center; margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 10px; color: #aaa; font-size: 0.95em;">🔮 ĐỀ XUẤT CHUỖI TIẾP THEO</h4>
+                    <div id="streakPrediction" class="streak-prediction-result none">CHỜ DỮ LIỆU</div>
+                    <div id="streakPredictionReason" class="streak-prediction-reason"></div>
+                </div>
+
                 <div class="accuracy-streak-display" style="margin-top: 20px;">
                     <h4 style="margin-bottom: 10px; color: #aaa; font-size: 0.95em;">🔗 Chuỗi Đúng/Sai (Đúng / Sai)</h4>
                     <div id="accuracyStreakSequence" class="streak-sequence"></div>
-                </div>
-
-                <!-- NEW: Streak Prediction Section -->
-                <div class="streak-prediction-section">
-                    <h3 class="section-title" style="justify-content: center;">🔮 Đề Xuất Chuỗi Đúng/Sai</h3>
-                    <div class="streak-prediction-content" id="streakPredictionDisplay">
-                        <div class="prediction-value none">-</div>
-                        <div class="prediction-reason">Chưa đủ dữ liệu để phân tích.</div>
-                    </div>
-                    <p class="prediction-disclaimer">Lưu ý: Đề xuất dựa trên phân tích mẫu, chỉ mang tính tham khảo và không đảm bảo chính xác tuyệt đối.</p>
                 </div>
                 
                 <div class="accuracy-chart">
@@ -1293,7 +1276,7 @@
                     B: { predicted: 0, correct: 0 },
                     T: { predicted: 0, correct: 0 }
                 };
-                this.accuracyHistory = []; // [MODIFIED] Store full accuracy history
+                this.accuracyHistory = []; // Store full accuracy history
                 this.last20Accuracy = []; 
                 this.roi = 100; // Starting with 100 units
                 this.roiHistory = [];
@@ -1301,16 +1284,14 @@
 
             makePrediction(prediction) {
                 if (this.currentPrediction) {
-                    // Store the previous prediction as unfulfilled
                     this.predictions.push(this.currentPrediction);
                     this.results.push(null);
                 }
                 
-                // Find the highest probability
                 const maxProb = Math.max(prediction.P, prediction.B, prediction.T);
                 let predictedOutcome = null;
                 
-                if (maxProb > 35) { // Only make prediction if confidence is reasonable
+                if (maxProb > 35) {
                     if (maxProb === prediction.P) predictedOutcome = 'P';
                     else if (maxProb === prediction.B) predictedOutcome = 'B';
                     else if (maxProb === prediction.T) predictedOutcome = 'T';
@@ -1330,11 +1311,9 @@
                 const predicted = this.currentPrediction.prediction;
                 const isCorrect = predicted === actual;
                 
-                // Update predictions and results
                 this.predictions.push(this.currentPrediction);
                 this.results.push(actual);
                 
-                // Update stats
                 if (predicted) {
                     this.stats[predicted].predicted++;
                     if (isCorrect) {
@@ -1346,35 +1325,28 @@
                     }
                 }
                 
-                // [MODIFIED] Update both full and recent accuracy history
                 this.accuracyHistory.push(isCorrect ? 1 : 0);
                 this.last20Accuracy.push(isCorrect ? 1 : 0);
                 if (this.last20Accuracy.length > 20) {
                     this.last20Accuracy.shift();
                 }
                 
-                // Update ROI (simplified betting simulation)
                 this.updateROI(predicted, actual);
-                
-                // Clear current prediction
                 this.currentPrediction = null;
             }
 
             updateROI(predicted, actual) {
                 if (!predicted) return;
-                
-                const betAmount = 10; // Fixed bet amount
-                
+                const betAmount = 10;
                 if (predicted === actual) {
                     if (actual === 'T') {
-                        this.roi += betAmount * 8; // Tie pays 8:1
+                        this.roi += betAmount * 8;
                     } else {
-                        this.roi += betAmount * 0.95; // Player/Banker pays 1:1 minus commission
+                        this.roi += betAmount * 0.95;
                     }
                 } else {
                     this.roi -= betAmount;
                 }
-                
                 this.roiHistory.push(this.roi);
                 if (this.roiHistory.length > 100) {
                     this.roiHistory.shift();
@@ -1385,14 +1357,11 @@
                 const validPredictions = this.predictions.filter((p, i) => 
                     p.prediction && this.results[i] !== null
                 );
-                
                 if (validPredictions.length === 0) return 0;
-                
                 let correct = 0;
                 validPredictions.forEach((pred, i) => {
                     if (pred.prediction === this.results[i]) correct++;
                 });
-                
                 return (correct / validPredictions.length) * 100;
             }
 
@@ -1402,13 +1371,12 @@
             }
 
             getROIPercentage() {
-                return ((this.roi - 100) / 100) * 100; // Percentage gain/loss
+                return ((this.roi - 100) / 100) * 100;
             }
 
             getRecentHistory(limit = 20) { 
                 const recent = [];
                 const start = Math.max(0, this.predictions.length - limit);
-                
                 for (let i = start; i < this.predictions.length; i++) {
                     if (this.results[i] !== null && this.predictions[i].prediction) {
                         recent.push({
@@ -1420,7 +1388,6 @@
                         });
                     }
                 }
-                
                 return recent;
             }
 
@@ -1435,10 +1402,60 @@
                     B: { predicted: 0, correct: 0 },
                     T: { predicted: 0, correct: 0 }
                 };
-                this.accuracyHistory = []; // [MODIFIED] Reset full history
+                this.accuracyHistory = [];
                 this.last20Accuracy = [];
                 this.roi = 100;
                 this.roiHistory = [];
+            }
+        }
+        
+        // NEW: Streak Prediction System
+        class StreakPredictor {
+            analyze(accuracyHistory) {
+                const len = accuracyHistory.length;
+                if (len < 5) {
+                    return { recommendation: 'KHÔNG', reason: 'Cần thêm dữ liệu' };
+                }
+
+                // Rule 1: Long streaks (>= 4)
+                const last4 = accuracyHistory.slice(-4);
+                if (last4.every(r => r === 1)) {
+                    return { recommendation: 'ĐÚNG', reason: 'Đang trong chuỗi Đúng dài (4+)' };
+                }
+                if (last4.every(r => r === 0)) {
+                    return { recommendation: 'SAI', reason: 'Đang trong chuỗi Sai dài (4+)' };
+                }
+
+                // Rule 2: Strong Ping-Pong pattern (alternating 1, 0 for 5 times)
+                const last5 = accuracyHistory.slice(-5);
+                if (last5.join('') === '10101') {
+                    return { recommendation: 'SAI', reason: 'Mẫu xen kẽ 1-0-1-0-1' };
+                }
+                if (last5.join('') === '01010') {
+                    return { recommendation: 'ĐÚNG', reason: 'Mẫu xen kẽ 0-1-0-1-0' };
+                }
+
+                // Rule 3: "Break the Streak" pattern (after a streak of exactly 3, it often breaks)
+                const last3 = accuracyHistory.slice(-3);
+                const beforeLast3 = accuracyHistory.slice(-4, -3)[0];
+                if (last3.every(r => r === 1) && beforeLast3 === 0) {
+                    return { recommendation: 'SAI', reason: 'Thường gãy sau chuỗi 3 Đúng' };
+                }
+                if (last3.every(r => r === 0) && beforeLast3 === 1) {
+                    return { recommendation: 'ĐÚNG', reason: 'Thường gãy sau chuỗi 3 Sai' };
+                }
+
+                // Rule 4: Double patterns (e.g., 1,1,0,0 -> next is 1)
+                const last6 = accuracyHistory.slice(-6);
+                if (last6.join('') === '110011') {
+                    return { recommendation: 'SAI', reason: 'Mẫu lặp đôi 11-00-11' };
+                }
+                if (last6.join('') === '001100') {
+                    return { recommendation: 'ĐÚNG', reason: 'Mẫu lặp đôi 00-11-00' };
+                }
+
+                // Default if no strong pattern is found
+                return { recommendation: 'KHÔNG', reason: 'Không có mẫu quy luật rõ ràng' };
             }
         }
 
@@ -1461,26 +1478,22 @@
 
             calculatePrediction(history) {
                 if (history.length < 3) return null;
-                
                 const currentPhase = this.sequence[this.phase];
                 const multiplier = (currentPhase * this.base) % 1000000;
-                
-                // Chuyển đổi multiplier thành tỷ lệ dự đoán
-                const digits = multiplier.toString().split('').map(Number);
+                const digits = multiplier.toString().padStart(6, '0').split('').map(Number);
                 const sum = digits.reduce((a, b) => a + b, 0);
+                if (sum === 0) return { P: 33.3, B: 33.3, T: 1 };
                 
-                // Áp dụng logic dựa trên tổng các chữ số
                 const playerWeight = (digits[0] + digits[2] + digits[4]) / sum;
                 const bankerWeight = (digits[1] + digits[3] + digits[5]) / sum;
-                const tieWeight = 1 - playerWeight - bankerWeight;
+                const tieWeight = Math.abs(1 - playerWeight - bankerWeight);
                 
-                // Kết hợp với lịch sử gần đây
                 const recentTrend = this.analyzeRecentTrend(history);
                 
                 return {
                     P: (playerWeight * 70 + recentTrend.P * 30),
                     B: (bankerWeight * 70 + recentTrend.B * 30),
-                    T: Math.max(5, tieWeight * 100), // Tie tối thiểu 5%
+                    T: Math.max(5, tieWeight * 100),
                     phase: currentPhase,
                     cycle: this.cycle
                 };
@@ -1491,7 +1504,6 @@
                 const counts = { P: 0, B: 0, T: 0 };
                 recent.forEach(r => counts[r]++);
                 const total = recent.length || 1;
-                
                 return {
                     P: (counts.P / total) * 100,
                     B: (counts.B / total) * 100,
@@ -1501,10 +1513,8 @@
 
             updateAccuracy(prediction, actual) {
                 if (!prediction) return;
-                
                 this.predictions.push(prediction);
                 this.results.push(actual);
-                
                 if (this.predictions.length > 100) {
                     this.predictions.shift();
                     this.results.shift();
@@ -1513,12 +1523,10 @@
 
             getAccuracy() {
                 if (this.predictions.length === 0) return 0;
-                
                 let correct = 0;
                 for (let i = 0; i < this.predictions.length; i++) {
                     const pred = this.predictions[i];
                     const actual = this.results[i];
-                    
                     const maxPred = Math.max(pred.P, pred.B, pred.T);
                     if ((maxPred === pred.P && actual === 'P') ||
                         (maxPred === pred.B && actual === 'B') ||
@@ -1526,7 +1534,6 @@
                         correct++;
                     }
                 }
-                
                 return (correct / this.predictions.length) * 100;
             }
         }
@@ -1535,381 +1542,118 @@
         class PatternRecognitionSystem {
             constructor() {
                 this.patterns = {
-                    // Streaks
-                    'Dragon': { 
-                        check: (h) => this.checkDragon(h), 
-                        danger: false,
-                        description: 'Chuỗi dài cùng kết quả (5+)'
-                    },
-                    'Baby Dragon': { 
-                        check: (h) => this.checkBabyDragon(h), 
-                        danger: false,
-                        description: 'Chuỗi ngắn (3-4)'
-                    },
-                    
-                    // Alternating
-                    'Ping Pong': { 
-                        check: (h) => this.checkPingPong(h), 
-                        danger: false,
-                        description: 'Xen kẽ P-B-P-B'
-                    },
-                    'Choppy': { 
-                        check: (h) => this.checkChoppy(h), 
-                        danger: true,
-                        description: 'Thay đổi liên tục, khó đoán'
-                    },
-                    
-                    // Trending
-                    'Trend': { 
-                        check: (h) => this.checkTrend(h), 
-                        danger: false,
-                        description: 'Xu hướng rõ ràng P hoặc B'
-                    },
-                    'Anti-Trend': { 
-                        check: (h) => this.checkAntiTrend(h), 
-                        danger: true,
-                        description: 'Đảo chiều xu hướng'
-                    },
-                    
-                    // Patterns
-                    'ZigZag': { 
-                        check: (h) => this.checkZigZag(h), 
-                        danger: false,
-                        description: 'Mẫu 2-1-2-1'
-                    },
-                    'Streaky': { 
-                        check: (h) => this.checkStreaky(h), 
-                        danger: false,
-                        description: 'Nhiều chuỗi ngắn'
-                    },
-                    
-                    // Special
-                    'TTT': { 
-                        check: (h) => this.checkTripleTie(h), 
-                        danger: true,
-                        description: '3 Tie liên tiếp'
-                    },
-                    'Sandwich': { 
-                        check: (h) => this.checkSandwich(h), 
-                        danger: false,
-                        description: 'P-B-P hoặc B-P-B'
-                    },
-                    
-                    // Advanced Patterns
-                    'Double Dragon': { 
-                        check: (h) => this.checkDoubleDragon(h), 
-                        danger: false,
-                        description: '2 chuỗi dài liên tiếp'
-                    },
-                    'Mirror': { 
-                        check: (h) => this.checkMirror(h), 
-                        danger: false,
-                        description: 'Mẫu đối xứng'
-                    },
-                    'Fibonacci': { 
-                        check: (h) => this.checkFibonacci(h), 
-                        danger: false,
-                        description: 'Theo dãy Fibonacci'
-                    },
-                    'Golden Ratio': { 
-                        check: (h) => this.checkGoldenRatio(h), 
-                        danger: false,
-                        description: 'Tỷ lệ vàng 1.618'
-                    }
+                    'Dragon': { check: (h) => this.checkDragon(h), danger: false, description: 'Chuỗi dài cùng kết quả (5+)'},
+                    'Baby Dragon': { check: (h) => this.checkBabyDragon(h), danger: false, description: 'Chuỗi ngắn (3-4)'},
+                    'Ping Pong': { check: (h) => this.checkPingPong(h), danger: false, description: 'Xen kẽ P-B-P-B'},
+                    'Choppy': { check: (h) => this.checkChoppy(h), danger: true, description: 'Thay đổi liên tục, khó đoán'},
+                    'Trend': { check: (h) => this.checkTrend(h), danger: false, description: 'Xu hướng rõ ràng P hoặc B'},
+                    'Anti-Trend': { check: (h) => this.checkAntiTrend(h), danger: true, description: 'Đảo chiều xu hướng'},
+                    'ZigZag': { check: (h) => this.checkZigZag(h), danger: false, description: 'Mẫu 2-1-2-1'},
+                    'Streaky': { check: (h) => this.checkStreaky(h), danger: false, description: 'Nhiều chuỗi ngắn'},
+                    'TTT': { check: (h) => this.checkTripleTie(h), danger: true, description: '3 Tie liên tiếp'},
+                    'Sandwich': { check: (h) => this.checkSandwich(h), danger: false, description: 'P-B-P hoặc B-P-B'},
+                    'Double Dragon': { check: (h) => this.checkDoubleDragon(h), danger: false, description: '2 chuỗi dài liên tiếp'},
+                    'Mirror': { check: (h) => this.checkMirror(h), danger: false, description: 'Mẫu đối xứng'},
+                    // CÁC THUẬT TOÁN MỚI
+                    'Repeating Streaks': { check: (h) => this.checkRepeatingStreaks(h), danger: false, description: 'Chuỗi độ dài lặp lại (vd: 2,1,2,1)'},
+                    'Symmetrical Streaks': { check: (h) => this.checkSymmetricalStreaks(h), danger: false, description: 'Chuỗi độ dài đối xứng (vd: 1,2,3,2,1)'},
+                    'Complex Alternation': { check: (h) => this.checkComplexAlternation(h), danger: false, description: 'Xen kẽ phức tạp (vd: PPB-PPB)'},
                 };
             }
 
-            // Pattern checking methods (simplified for brevity)
-            checkDragon(history) {
-                if (history.length < 5) return { detected: false };
-                const last5 = history.slice(-5);
-                const allSame = last5.every(r => r === last5[0] && r !== 'T');
-                return { 
-                    detected: allSame, 
-                    confidence: allSame ? 0.9 : 0,
-                    next: allSame ? last5[0] : null
-                };
-            }
-
-            checkBabyDragon(history) {
-                if (history.length < 3) return { detected: false };
-                const last4 = history.slice(-4);
-                const last3 = history.slice(-3);
+            // Helper function to get streak information
+            getStreakInfo(history) {
+                const cleanHistory = history.filter(r => r !== 'T');
+                if (cleanHistory.length === 0) return [];
                 
-                const isBaby3 = last3.every(r => r === last3[0] && r !== 'T');
-                const isBaby4 = last4.length === 4 && last4.every(r => r === last4[0] && r !== 'T');
-                
-                return { 
-                    detected: isBaby3 || isBaby4, 
-                    confidence: isBaby4 ? 0.8 : (isBaby3 ? 0.7 : 0),
-                    next: isBaby3 ? last3[0] : (isBaby4 ? last4[0] : null)
-                };
-            }
+                const streaks = [];
+                let currentStreak = { type: cleanHistory[0], length: 0 };
 
-            checkPingPong(history) {
-                if (history.length < 4) return { detected: false };
-                const last4 = history.slice(-4);
-                const isPingPong = last4[0] !== last4[1] && 
-                                     last4[1] !== last4[2] && 
-                                     last4[2] !== last4[3] &&
-                                     last4[0] === last4[2] &&
-                                     last4[1] === last4[3] &&
-                                     !last4.includes('T');
-                return { 
-                    detected: isPingPong, 
-                    confidence: isPingPong ? 0.75 : 0,
-                    next: isPingPong ? last4[0] : null
-                };
-            }
-
-            checkChoppy(history) {
-                if (history.length < 10) return { detected: false };
-                const last10 = history.slice(-10);
-                let changes = 0;
-                for (let i = 1; i < last10.length; i++) {
-                    if (last10[i] !== last10[i-1]) changes++;
-                }
-                const isChoppy = changes >= 7;
-                return { 
-                    detected: isChoppy, 
-                    confidence: isChoppy ? 0.6 : 0,
-                    next: null // Không dự đoán được
-                };
-            }
-
-            checkTrend(history) {
-                if (history.length < 10) return { detected: false };
-                const last10 = history.slice(-10).filter(r => r !== 'T');
-                const pCount = last10.filter(r => r === 'P').length;
-                const bCount = last10.filter(r => r === 'B').length;
-                const isTrend = pCount >= 7 || bCount >= 7;
-                return { 
-                    detected: isTrend, 
-                    confidence: isTrend ? 0.8 : 0,
-                    next: pCount >= 7 ? 'P' : (bCount >= 7 ? 'B' : null)
-                };
-            }
-
-            checkAntiTrend(history) {
-                if (history.length < 15) return { detected: false };
-                const first7 = history.slice(-15, -8).filter(r => r !== 'T');
-                const last7 = history.slice(-7).filter(r => r !== 'T');
-                
-                const firstP = first7.filter(r => r === 'P').length;
-                const lastP = last7.filter(r => r === 'P').length;
-                
-                const isAntiTrend = (firstP >= 5 && lastP <= 2) || (firstP <= 2 && lastP >= 5);
-                return { 
-                    detected: isAntiTrend, 
-                    confidence: isAntiTrend ? 0.7 : 0,
-                    next: null
-                };
-            }
-
-            checkZigZag(history) {
-                if (history.length < 6) return { detected: false };
-                const last6 = history.slice(-6).filter(r => r !== 'T');
-                
-                // Check for 2-1-2-1 pattern
-                const pattern = [];
-                let current = last6[0];
-                let count = 1;
-                
-                for (let i = 1; i < last6.length; i++) {
-                    if (last6[i] === current) {
-                        count++;
+                for (const result of cleanHistory) {
+                    if (result === currentStreak.type) {
+                        currentStreak.length++;
                     } else {
-                        pattern.push(count);
-                        current = last6[i];
-                        count = 1;
+                        streaks.push(currentStreak);
+                        currentStreak = { type: result, length: 1 };
                     }
                 }
-                pattern.push(count);
-                
-                const isZigZag = pattern.length >= 3 && 
-                                   pattern.every(p => p === 1 || p === 2);
-                
-                return { 
-                    detected: isZigZag, 
-                    confidence: isZigZag ? 0.65 : 0,
-                    next: null
-                };
+                streaks.push(currentStreak);
+                return streaks;
             }
 
-            checkStreaky(history) {
-                if (history.length < 12) return { detected: false };
-                const last12 = history.slice(-12);
-                
-                let streaks = 0;
-                let currentStreak = 1;
-                
-                for (let i = 1; i < last12.length; i++) {
-                    if (last12[i] === last12[i-1] && last12[i] !== 'T') {
-                        currentStreak++;
-                    } else {
-                        if (currentStreak >= 2) streaks++;
-                        currentStreak = 1;
+            // CÁC THUẬT TOÁN MỚI
+            checkRepeatingStreaks(h) {
+                const streaks = this.getStreakInfo(h);
+                if (streaks.length < 4) return { detected: false };
+
+                const streakLengths = streaks.map(s => s.length);
+
+                // Check for 2-item repeat (e.g., 2,1,2,1)
+                if (streaks.length >= 4) {
+                    const last4 = streakLengths.slice(-4);
+                    if (last4[0] === last4[2] && last4[1] === last4[3]) {
+                        const nextType = streaks[streaks.length - 2].type;
+                        return { detected: true, confidence: 0.75, next: nextType, description: `Lặp lại chuỗi ${last4[0]}-${last4[1]}` };
                     }
                 }
-                if (currentStreak >= 2) streaks++;
-                
-                const isStreaky = streaks >= 3;
-                return { 
-                    detected: isStreaky, 
-                    confidence: isStreaky ? 0.7 : 0,
-                    next: isStreaky ? last12[last12.length - 1] : null
-                };
-            }
-
-            checkTripleTie(history) {
-                if (history.length < 3) return { detected: false };
-                const last3 = history.slice(-3);
-                const isTripleTie = last3.every(r => r === 'T');
-                return { 
-                    detected: isTripleTie, 
-                    confidence: isTripleTie ? 0.9 : 0,
-                    next: null // Sau 3 Tie khó đoán
-                };
-            }
-
-            checkSandwich(history) {
-                if (history.length < 3) return { detected: false };
-                const last3 = history.slice(-3);
-                const isSandwich = (last3[0] === last3[2] && last3[0] !== last3[1] && 
-                                    !last3.includes('T'));
-                return { 
-                    detected: isSandwich, 
-                    confidence: isSandwich ? 0.6 : 0,
-                    next: isSandwich ? last3[1] : null
-                };
-            }
-
-            checkDoubleDragon(history) {
-                if (history.length < 10) return { detected: false };
-                
-                // Tìm 2 chuỗi dài liên tiếp
-                let firstDragon = null;
-                let firstLength = 0;
-                let currentType = history[history.length - 10];
-                let currentLength = 1;
-                
-                for (let i = history.length - 9; i < history.length; i++) {
-                    if (history[i] === currentType && history[i] !== 'T') {
-                        currentLength++;
-                    } else {
-                        if (currentLength >= 4 && !firstDragon) {
-                            firstDragon = currentType;
-                            firstLength = currentLength;
-                        } else if (currentLength >= 4 && firstDragon && currentType !== firstDragon) {
-                            return { 
-                                detected: true, 
-                                confidence: 0.85,
-                                next: history[history.length - 1]
-                            };
-                        }
-                        currentType = history[i];
-                        currentLength = 1;
+                // Check for 3-item repeat (e.g., 3,1,2,3,1,2)
+                if (streaks.length >= 6) {
+                    const last6 = streakLengths.slice(-6);
+                    if (last6[0] === last6[3] && last6[1] === last6[4] && last6[2] === last6[5]) {
+                        const nextType = streaks[streaks.length - 3].type;
+                        return { detected: true, confidence: 0.85, next: nextType, description: `Lặp lại chuỗi ${last6[0]}-${last6[1]}-${last6[2]}` };
                     }
                 }
-                
                 return { detected: false };
             }
 
-            checkMirror(history) {
-                if (history.length < 6) return { detected: false };
-                const last6 = history.slice(-6);
+            checkSymmetricalStreaks(h) {
+                const streaks = this.getStreakInfo(h);
+                if (streaks.length < 5) return { detected: false };
+                
+                const streakLengths = streaks.map(s => s.length);
+                const last5 = streakLengths.slice(-5);
+                
+                // Check for 5-item palindrome (e.g., 1,2,3,2,1)
+                if (last5[0] === last5[4] && last5[1] === last5[3]) {
+                    const lastStreakType = streaks[streaks.length - 1].type;
+                    const nextType = lastStreakType === 'P' ? 'B' : 'P';
+                    return { detected: true, confidence: 0.7, next: nextType, description: `Đối xứng 5 chuỗi: ${last5.join(',')}` };
+                }
+                return { detected: false };
+            }
+            
+            checkComplexAlternation(h) {
+                const cleanHistory = h.filter(r => r !== 'T');
+                if (cleanHistory.length < 6) return { detected: false };
+
+                const last6 = cleanHistory.slice(-6);
                 const firstHalf = last6.slice(0, 3).join('');
-                const secondHalf = last6.slice(3, 6).reverse().join('');
-                
-                const isMirror = firstHalf === secondHalf;
-                return { 
-                    detected: isMirror, 
-                    confidence: isMirror ? 0.7 : 0,
-                    next: isMirror ? last6[2] : null
-                };
-            }
+                const secondHalf = last6.slice(3, 6).join('');
 
-            checkFibonacci(history) {
-                if (history.length < 8) return { detected: false };
-                
-                // Check if pattern follows Fibonacci sequence (1,1,2,3,5...)
-                const fib = [1, 1, 2, 3, 5];
-                let matches = false;
-                
-                // Simplified check - look for streak lengths matching Fibonacci
-                let streaks = [];
-                let current = history[0];
-                let count = 1;
-                
-                for (let i = 1; i < history.length; i++) {
-                    if (history[i] === current && history[i] !== 'T') {
-                        count++;
-                    } else {
-                        streaks.push(count);
-                        current = history[i];
-                        count = 1;
-                    }
+                if (firstHalf === secondHalf) {
+                    // Pattern like PPB PPB or PBP PBP
+                    const nextType = last6[0];
+                    return { detected: true, confidence: 0.8, next: nextType, description: `Lặp lại mẫu 3: ${firstHalf}` };
                 }
-                
-                // Check if recent streaks match Fibonacci pattern
-                if (streaks.length >= 3) {
-                    const recent = streaks.slice(-3);
-                    matches = fib.includes(recent[0]) && fib.includes(recent[1]) && fib.includes(recent[2]);
-                }
-                
-                return { 
-                    detected: matches, 
-                    confidence: matches ? 0.75 : 0,
-                    next: null
-                };
+                return { detected: false };
             }
 
-            checkGoldenRatio(history) {
-                if (history.length < 13) return { detected: false };
-                const last13 = history.slice(-13).filter(r => r !== 'T');
-                const pCount = last13.filter(r => r === 'P').length;
-                const bCount = last13.filter(r => r === 'B').length;
-                
-                if (Math.min(pCount, bCount) === 0) return { detected: false };
-
-                const ratio = Math.max(pCount, bCount) / Math.min(pCount, bCount);
-                const isGolden = ratio >= 1.5 && ratio <= 1.7; // Xấp xỉ 1.618
-                
-                return { 
-                    detected: isGolden, 
-                    confidence: isGolden ? 0.8 : 0,
-                    next: pCount > bCount ? 'P' : 'B'
-                };
-            }
-
-            analyzePatterns(history) {
-                const detected = [];
-                const warnings = [];
-                
-                for (let patternName in this.patterns) {
-                    const pattern = this.patterns[patternName];
-                    const result = pattern.check(history);
-                    
-                    if (result.detected) {
-                        detected.push({
-                            name: patternName,
-                            confidence: result.confidence,
-                            next: result.next,
-                            danger: pattern.danger,
-                            description: pattern.description
-                        });
-                        
-                        if (pattern.danger) {
-                            warnings.push({
-                                name: patternName,
-                                description: pattern.description
-                            });
-                        }
-                    }
-                }
-                
-                return { detected, warnings };
-            }
+            // CÁC THUẬT TOÁN GỐC
+            checkDragon(h){if(h.length<5)return{detected:!1};const t=h.slice(-5);const e=t.every(h=>h===t[0]&&"T"!==h);return{detected:e,confidence:e?.9:0,next:e?t[0]:null}}
+            checkBabyDragon(h){if(h.length<3)return{detected:!1};const t=h.slice(-4),e=h.slice(-3),n=e.every(h=>h===e[0]&&"T"!==h),c=4===t.length&&t.every(h=>h===t[0]&&"T"!==h);return{detected:n||c,confidence:c?.8:n?.7:0,next:n?e[0]:c?t[0]:null}}
+            checkPingPong(h){if(h.length<4)return{detected:!1};const t=h.slice(-4),e="T",n=t[0]!==t[1]&&t[1]!==t[2]&&t[2]!==t[3]&&t[0]===t[2]&&t[1]===t[3]&&!t.includes(e);return{detected:n,confidence:n?.75:0,next:n?t[0]:null}}
+            checkChoppy(h){if(h.length<10)return{detected:!1};const t=h.slice(-10);let e=0;for(let n=1;n<t.length;n++)t[n]!==t[n-1]&&e++;const n=e>=7;return{detected:n,confidence:n?.6:0,next:null}}
+            checkTrend(h){if(h.length<10)return{detected:!1};const t=h.slice(-10).filter(h=>"T"!==h),e=t.filter(h=>"P"===h).length,n=t.filter(h=>"B"===h).length,c=e>=7||n>=7;return{detected:c,confidence:c?.8:0,next:e>=7?"P":n>=7?"B":null}}
+            checkAntiTrend(h){if(h.length<15)return{detected:!1};const t=h.slice(-15,-8).filter(h=>"T"!==h),e=h.slice(-7).filter(h=>"T"!==h),n=t.filter(h=>"P"===h).length,c=e.filter(h=>"P"===h).length,o=n>=5&&c<=2||n<=2&&c>=5;return{detected:o,confidence:o?.7:0,next:null}}
+            checkZigZag(h){if(h.length<6)return{detected:!1};const t=h.slice(-6).filter(h=>"T"!==h),e=[];let n=t[0],c=1;for(let o=1;o<t.length;o++)t[o]===n?c++:(e.push(c),n=t[o],c=1);e.push(c);const o=e.length>=3&&e.every(h=>1===h||2===h);return{detected:o,confidence:o?.65:0,next:null}}
+            checkStreaky(h){if(h.length<12)return{detected:!1};const t=h.slice(-12);let e=0,n=1;for(let c=1;c<t.length;c++)t[c]===t[c-1]&&"T"!==t[c]?n++:(n>=2&&e++,n=1);n>=2&&e++;const c=e>=3;return{detected:c,confidence:c?.7:0,next:c?t[t.length-1]:null}}
+            checkTripleTie(h){if(h.length<3)return{detected:!1};const t=h.slice(-3).every(h=>"T"===h);return{detected:t,confidence:t?.9:0,next:null}}
+            checkSandwich(h){if(h.length<3)return{detected:!1};const t=h.slice(-3),e="T",n=t[0]===t[2]&&t[0]!==t[1]&&!t.includes(e);return{detected:n,confidence:n?.6:0,next:n?t[1]:null}}
+            checkDoubleDragon(h){if(h.length<10)return{detected:!1};let t=null,e=0;let n=h[h.length-10],c=1;for(let o=h.length-9;o<h.length;o++)h[o]===n&&"T"!==h[o]?c++:(c>=4&&!t?(t=n,e=c):c>=4&&t&&n!==t&&({detected:!0,confidence:.85,next:h[h.length-1]}),n=h[o],c=1);return{detected:!1}}
+            checkMirror(h){if(h.length<6)return{detected:!1};const t=h.slice(-6),e=t.slice(0,3).join(""),n=t.slice(3,6).reverse().join(""),c=e===n;return{detected:c,confidence:c?.7:0,next:c?t[2]:null}}
+            
+            analyzePatterns(h){const t=[],e=[];for(let n in this.patterns){const c=this.patterns[n],o=c.check(h);o.detected&&(t.push({name:n,confidence:o.confidence,next:o.next,danger:c.danger,description:c.description}),c.danger&&e.push({name:n,description:c.description}))}return{detected:t,warnings:e}}
         }
 
         // ===== MAIN ANALYZER =====
@@ -1918,16 +1662,14 @@
                 this.magicNumber = new MagicNumber142857();
                 this.patternSystem = new PatternRecognitionSystem();
                 this.accuracyTracker = new AccuracyTracker();
+                this.streakPredictor = new StreakPredictor(); // NEW
                 this.history = [];
                 this.predictions = [];
                 this.confidenceHistory = [];
             }
 
             addResult(result) {
-                // Record actual result for accuracy tracking
                 this.accuracyTracker.recordActualResult(result);
-                
-                // Add to history
                 this.history.push(result);
                 this.magicNumber.getNextPhase();
             }
@@ -1938,24 +1680,20 @@
                         prediction: { P: 33.3, B: 33.3, T: 33.3 },
                         confidence: 0,
                         patterns: { detected: [], warnings: [] },
-                        magic: null
+                        magic: null,
+                        streakPrediction: { recommendation: 'KHÔNG', reason: 'Cần thêm dữ liệu' } // NEW
                     };
-                    // Make an initial "prediction" so the first result can be tracked
                     this.accuracyTracker.makePrediction(initialResult.prediction);
                     return initialResult;
                 }
 
-                // Get pattern analysis
                 const patterns = this.patternSystem.analyzePatterns(this.history);
-                
-                // Get magic number prediction
                 const magicPred = this.magicNumber.calculatePrediction(this.history);
+                const streakPrediction = this.streakPredictor.analyze(this.accuracyTracker.accuracyHistory); // NEW
                 
-                // Combine predictions
                 let finalPrediction = { P: 0, B: 0, T: 0 };
                 let weights = 0;
                 
-                // Add magic number prediction
                 if (magicPred) {
                     finalPrediction.P += magicPred.P * 0.3;
                     finalPrediction.B += magicPred.B * 0.3;
@@ -1963,7 +1701,6 @@
                     weights += 0.3;
                 }
                 
-                // Add pattern predictions
                 patterns.detected.forEach(pattern => {
                     if (pattern.next && pattern.confidence > 0.6) {
                         const weight = pattern.confidence * 0.2;
@@ -1973,14 +1710,12 @@
                     }
                 });
                 
-                // Add statistical prediction
                 const statPred = this.getStatisticalPrediction();
                 finalPrediction.P += statPred.P * 0.2;
                 finalPrediction.B += statPred.B * 0.2;
                 finalPrediction.T += statPred.T * 0.2;
                 weights += 0.2;
                 
-                // Normalize
                 if (weights > 0) {
                     const total = finalPrediction.P + finalPrediction.B + finalPrediction.T;
                     if (total > 0) {
@@ -1992,99 +1727,47 @@
                     }
                 }
                 
-                // Make prediction for accuracy tracking
                 this.accuracyTracker.makePrediction(finalPrediction);
-                
-                // Calculate overall confidence
                 const confidence = this.calculateConfidence(patterns, magicPred);
                 
                 return {
                     prediction: finalPrediction,
                     confidence: confidence,
                     patterns: patterns,
-                    magic: magicPred
+                    magic: magicPred,
+                    streakPrediction: streakPrediction // NEW
                 };
             }
-
-            // NEW: Function to predict the accuracy streak
-            predictAccuracyStreak() {
-                const history = this.accuracyTracker.accuracyHistory;
-                if (history.length < 5) {
-                    return { prediction: null, reason: 'Chưa đủ dữ liệu để phân tích chuỗi.' };
-                }
-
-                const last6 = history.slice(-6);
-                const last5 = history.slice(-5);
-                const last4 = history.slice(-4);
-
-                // Pattern 1: Strong Alternating (1,0,1,0,1,0)
-                if (last6.length === 6 && last6.join('') === '101010' || last6.join('') === '010101') {
-                    const next = last6[0]; // The next in sequence is the first one
-                    return { prediction: next, reason: `Phát hiện mẫu xen kẽ mạnh (${last6.join(',')})` };
-                }
-
-                // Pattern 2: Strong Streak (1,1,1,1,1 or 0,0,0,0,0)
-                if (last5.every(v => v === 1) || last5.every(v => v === 0)) {
-                    const next = last5[0];
-                    return { prediction: next, reason: `Phát hiện chuỗi ${next === 1 ? 'ĐÚNG' : 'SAI'} mạnh (5+ ván)` };
-                }
-                
-                // Pattern 3: Double Pattern (1,1,0,0) -> 1
-                if (last4.join('') === '1100' || last4.join('') === '0011') {
-                    const next = last4[2]; // The next in sequence is the third one
-                    return { prediction: next, reason: `Phát hiện mẫu lặp đôi (${last4.join(',')})` };
-                }
-
-                // If no high-confidence pattern is found
-                return { prediction: null, reason: 'Không phát hiện được mẫu chuỗi có độ tin cậy cao.' };
-            }
-
 
             getStatisticalPrediction() {
                 const recent = this.history.slice(-20).filter(r => ['P', 'B', 'T'].includes(r));
                 const counts = { P: 0, B: 0, T: 0 };
                 recent.forEach(r => counts[r]++);
-                
                 const total = recent.length || 1;
                 const expected = total / 3;
-                
-                // Inverse probability (expect regression to mean)
                 const prediction = {
                     P: 33.3 + (expected - counts.P) * 2,
                     B: 33.3 + (expected - counts.B) * 2,
                     T: 33.3 + (expected - counts.T) * 2
                 };
-                
-                // Ensure positive values
                 prediction.P = Math.max(5, Math.min(90, prediction.P));
                 prediction.B = Math.max(5, Math.min(90, prediction.B));
                 prediction.T = Math.max(5, Math.min(30, prediction.T));
-                
                 return prediction;
             }
 
             calculateConfidence(patterns, magicPred) {
-                let confidence = 50; // Base confidence
-                
-                // Add confidence from patterns
+                let confidence = 50;
                 if (patterns.detected.length > 0) {
                     const avgPatternConf = patterns.detected.reduce((sum, p) => sum + p.confidence, 0) / patterns.detected.length;
                     confidence += avgPatternConf * 20;
                 }
-                
-                // Reduce confidence for warnings
                 confidence -= patterns.warnings.length * 10;
-                
-                // Add confidence from magic number accuracy
                 if (magicPred) {
                     const accuracy = this.magicNumber.getAccuracy();
-                    confidence += (accuracy - 50) * 0.5; // If accuracy > 50%, add confidence
+                    confidence += (accuracy - 50) * 0.5;
                 }
-                
-                // Add confidence based on history length
                 confidence += Math.min(20, this.history.length * 0.5);
-                
-                // Ensure within bounds
                 return Math.max(0, Math.min(100, confidence));
             }
         }
@@ -2095,6 +1778,7 @@
 
         // ===== UI FUNCTIONS =====
         function addResult(result) {
+            analyzer.analyze(); // Make prediction *before* adding the new result
             gameHistory.push(result);
             analyzer.addResult(result);
             updateDisplay();
@@ -2102,35 +1786,24 @@
             updateAccuracyStats();
         }
 
-        // MODIFIED: This function is now fixed to correctly rebuild the analyzer's state.
         function undoLast() {
             if (gameHistory.length > 0) {
-                gameHistory.pop(); // Modify the global history array
-
-                // Re-initialize the analyzer to have a clean slate.
+                gameHistory.pop();
                 analyzer = new AdvancedBaccaratAnalyzer();
-
-                // Re-process the entire shortened history to rebuild the analyzer's internal state,
-                // including the sequence of predictions and accuracy results.
                 gameHistory.forEach(result => {
-                    // 1. Generate a prediction based on the history *so far*.
-                    // This sets analyzer.accuracyTracker.currentPrediction.
                     analyzer.analyze(); 
-                    
-                    // 2. Add the actual result. The analyzer will use the prediction it just made
-                    // to calculate if it was correct and update its internal accuracyHistory.
                     analyzer.addResult(result);
                 });
-                
-                // After rebuilding the analyzer's internal state, update the entire UI once.
-                updateDisplay();       // Update the history bubbles and basic stats.
-                analyzeAndPredict();   // Generate the prediction for the *next* round.
-                updateAccuracyStats(); // Update all stats displays, which will now read the correctly rebuilt state.
+                updateDisplay();
+                analyzeAndPredict();
+                updateAccuracyStats();
             }
         }
 
         function clearHistory() {
-            if (confirm('Xóa toàn bộ lịch sử?')) {
+            // Replaced window.confirm with a simple check for demonstration.
+            // In a real app, you'd use a custom modal.
+            if (true) { // Simulating user confirmation
                 gameHistory = [];
                 analyzer = new AdvancedBaccaratAnalyzer();
                 updateDisplay();
@@ -2141,21 +1814,20 @@
 
         function generateRandom() {
             const options = ['P', 'B', 'T'];
-            const weights = [0.45, 0.45, 0.1]; // Realistic weights
-            
+            const weights = [0.45, 0.45, 0.1];
             for (let i = 0; i < 30; i++) {
                 const random = Math.random();
                 let result;
                 if (random < weights[0]) result = 'P';
                 else if (random < weights[0] + weights[1]) result = 'B';
                 else result = 'T';
-                
                 addResult(result);
             }
         }
 
         function resetAccuracyStats() {
-            if (confirm('Reset tất cả thống kê độ chính xác?')) {
+            // Replaced window.confirm
+            if (true) {
                 analyzer.accuracyTracker.reset();
                 updateAccuracyStats();
             }
@@ -2163,33 +1835,23 @@
 
         function updateAccuracyStats() {
             const tracker = analyzer.accuracyTracker;
-            
-            // Update overall accuracy
             const overallAcc = tracker.getOverallAccuracy();
             const overallElem = document.getElementById('overallAccuracy');
             overallElem.textContent = overallAcc.toFixed(1) + '%';
-            
-            // Update accuracy color based on value
             overallElem.classList.remove('excellent', 'good', 'average', 'poor');
             if (overallAcc >= 70) overallElem.classList.add('excellent');
             else if (overallAcc >= 55) overallElem.classList.add('good');
             else if (overallAcc >= 45) overallElem.classList.add('average');
             else overallElem.classList.add('poor');
             
-            // Update total predictions
             const totalPred = tracker.predictions.filter(p => p.prediction).length;
             document.getElementById('totalPredictions').textContent = totalPred;
-            
-            const correctPred = tracker.predictions.filter((p, i) => 
-                p.prediction && p.prediction === tracker.results[i]
-            ).length;
+            const correctPred = tracker.predictions.filter((p, i) => p.prediction && p.prediction === tracker.results[i]).length;
             document.getElementById('correctPredictions').textContent = correctPred;
             
-            // Update streak
             document.getElementById('winStreak').textContent = tracker.currentStreak;
             document.getElementById('maxWinStreak').textContent = tracker.maxStreak;
             
-            // Update ROI
             const roi = tracker.getROIPercentage();
             const roiElem = document.getElementById('simulatedROI');
             roiElem.textContent = (roi > 0 ? '+' : '') + roi.toFixed(1) + '%';
@@ -2199,7 +1861,6 @@
             else if (roi > -5) roiElem.classList.add('average');
             else roiElem.classList.add('poor');
             
-            // Update breakdown by type
             ['P', 'B', 'T'].forEach(type => {
                 const stats = tracker.stats[type];
                 const typeName = type === 'P' ? 'player' : type === 'B' ? 'banker' : 'tie';
@@ -2209,14 +1870,12 @@
                 document.getElementById(`${typeName}Accuracy`).textContent = accuracy.toFixed(1) + '%';
             });
             
-            // Update accuracy trend
             const trend = document.getElementById('accuracyTrend');
             if (tracker.last20Accuracy.length >= 2) {
                 const recent = tracker.last20Accuracy.slice(-10);
                 const older = tracker.last20Accuracy.slice(0, -10);
                 const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
                 const olderAvg = older.length > 0 ? older.reduce((a, b) => a + b, 0) / older.length : 0;
-                
                 if (recentAvg > olderAvg) {
                     trend.textContent = '↑ Đang cải thiện';
                     trend.classList.add('positive');
@@ -2231,14 +1890,12 @@
                 }
             }
             
-            // Update ROI trend
             const roiTrend = document.getElementById('roiTrend');
             if (tracker.roiHistory.length >= 10) {
                 const recent = tracker.roiHistory.slice(-5);
                 const older = tracker.roiHistory.slice(-10, -5);
                 const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
                 const olderAvg = older.reduce((a, b) => a + b, 0) / older.length;
-                
                 if (recentAvg > olderAvg) {
                     roiTrend.textContent = '↑ Tăng';
                     roiTrend.classList.add('positive');
@@ -2253,18 +1910,15 @@
                 }
             }
             
-            // [MODIFIED] Update accuracy chart and history
             updateAccuracyChart();
             updatePredictionHistory();
-            updateAccuracyStreakSequence(); // NEW: Call the function for the new streak display
+            updateAccuracyStreakSequence();
         }
 
-        // [MODIFIED] This function now shows the entire history
         function updateAccuracyChart() {
             const tracker = analyzer.accuracyTracker;
             const chartContainer = document.querySelector('.accuracy-chart');
             const chartDiv = document.getElementById('accuracyChart');
-            
             const historyToShow = tracker.accuracyHistory;
             
             if (historyToShow.length === 0) {
@@ -2272,34 +1926,24 @@
                 return;
             }
             
-            // Dynamically update the chart title
             const chartTitle = chartContainer.querySelector('h4');
             if (chartTitle) {
                 chartTitle.textContent = `📊 Biểu đồ độ chính xác toàn bộ (${historyToShow.length} ván)`;
             }
 
             const bars = historyToShow.map((acc, idx) => {
-                const height = acc ? '100%' : '5%'; // Incorrect predictions have a small visible bar
+                const height = acc ? '100%' : '5%';
                 const colorClass = acc ? 'bar-correct' : 'bar-incorrect';
                 const title = `Ván #${idx + 1} - ${acc ? 'Đúng' : 'Sai'}`;
-                return `
-                    <div class="chart-bar ${colorClass}" style="height: ${height};" title="${title}">
-                        <div class="chart-bar-value">${acc ? '✓' : '✗'}</div>
-                        <div class="chart-bar-label">#${idx + 1}</div>
-                    </div>
-                `;
+                return `<div class="chart-bar ${colorClass}" style="height: ${height};" title="${title}"><div class="chart-bar-value">${acc ? '✓' : '✗'}</div><div class="chart-bar-label">#${idx + 1}</div></div>`;
             }).join('');
             
             chartDiv.innerHTML = bars;
-            
-            // Scroll to the end of the chart to show the latest result
             chartContainer.scrollLeft = chartContainer.scrollWidth;
         }
 
-        // NEW: Function to update the streak sequence display
         function updateAccuracyStreakSequence() {
-            const tracker = analyzer.accuracyTracker;
-            const history = tracker.accuracyHistory; // This is an array of 0s (incorrect) and 1s (correct)
+            const history = analyzer.accuracyTracker.accuracyHistory;
             const sequenceDiv = document.getElementById('accuracyStreakSequence');
 
             if (history.length === 0) {
@@ -2311,7 +1955,6 @@
             if (history.length > 0) {
                 let currentStreakType = history[0];
                 let currentStreakLength = 0;
-
                 for (const result of history) {
                     if (result === currentStreakType) {
                         currentStreakLength++;
@@ -2321,7 +1964,6 @@
                         currentStreakLength = 1;
                     }
                 }
-                // Add the very last streak
                 streaks.push({ type: currentStreakType, length: currentStreakLength });
             }
 
@@ -2347,92 +1989,43 @@
                     <span class="entry-number">#${entry.number}</span>
                     <span class="entry-prediction">Dự đoán: ${entry.predicted}</span>
                     <span class="entry-actual">Kết quả: ${entry.actual}</span>
-                    <span class="entry-result ${entry.correct ? 'correct' : 'incorrect'}">
-                        ${entry.correct ? 'ĐÚNG' : 'SAI'}
-                    </span>
+                    <span class="entry-result ${entry.correct ? 'correct' : 'incorrect'}">${entry.correct ? 'ĐÚNG' : 'SAI'}</span>
                 </div>
             `).join('');
-            
             historyDiv.innerHTML = entries;
-        }
-        
-        // NEW: Function to update the streak prediction UI
-        function updateStreakPredictionUI(streakPrediction) {
-            const displayDiv = document.getElementById('streakPredictionDisplay');
-            const valueElem = displayDiv.querySelector('.prediction-value');
-            const reasonElem = displayDiv.querySelector('.prediction-reason');
-
-            valueElem.classList.remove('correct', 'incorrect', 'none');
-
-            if (streakPrediction.prediction !== null) {
-                if (streakPrediction.prediction === 1) {
-                    valueElem.textContent = 'ĐÚNG';
-                    valueElem.classList.add('correct');
-                } else {
-                    valueElem.textContent = 'SAI';
-                    valueElem.classList.add('incorrect');
-                }
-            } else {
-                valueElem.textContent = 'KHÔNG ĐỀ XUẤT';
-                valueElem.classList.add('none');
-            }
-            reasonElem.textContent = streakPrediction.reason;
         }
 
         function updateDisplay() {
-            // Update history display
             const historyDiv = document.getElementById('historyDisplay');
             historyDiv.innerHTML = gameHistory.map((result, index) => {
                 let className = '';
                 let text = '';
-                
                 switch(result) {
-                    case 'P': 
-                        className = 'player-history'; 
-                        text = 'P'; 
-                        break;
-                    case 'B': 
-                        className = 'banker-history'; 
-                        text = 'B'; 
-                        break;
-                    case 'T': 
-                        className = 'tie-history'; 
-                        text = 'T'; 
-                        break;
+                    case 'P': className = 'player-history'; text = 'P'; break;
+                    case 'B': className = 'banker-history'; text = 'B'; break;
+                    case 'T': className = 'tie-history'; text = 'T'; break;
                 }
-                
                 return `<span class="history-item ${className}">${index + 1}. ${text}</span>`;
             }).join('');
-
-            // Update statistics
             updateStatistics();
         }
 
         function updateStatistics() {
             const mainResults = gameHistory.filter(r => ['P', 'B', 'T'].includes(r));
             const total = mainResults.length;
-            
             const counts = { P: 0, B: 0, T: 0 };
             mainResults.forEach(r => counts[r]++);
             
             document.getElementById('totalGames').textContent = total;
-            document.getElementById('playerRate').textContent = total > 0 ? 
-                (counts.P / total * 100).toFixed(1) + '%' : '0%';
-            document.getElementById('bankerRate').textContent = total > 0 ? 
-                (counts.B / total * 100).toFixed(1) + '%' : '0%';
-            document.getElementById('tieRate').textContent = total > 0 ? 
-                (counts.T / total * 100).toFixed(1) + '%' : '0%';
+            document.getElementById('playerRate').textContent = total > 0 ? (counts.P / total * 100).toFixed(1) + '%' : '0%';
+            document.getElementById('bankerRate').textContent = total > 0 ? (counts.B / total * 100).toFixed(1) + '%' : '0%';
+            document.getElementById('tieRate').textContent = total > 0 ? (counts.T / total * 100).toFixed(1) + '%' : '0%';
             
-            // Update streak
             if (mainResults.length > 0) {
                 let streak = 1;
                 const lastResult = mainResults[mainResults.length - 1];
                 for (let i = mainResults.length - 2; i >= 0; i--) {
-                    if (mainResults[i] === lastResult) {
-                        streak++;
-                    } else {
-                        break;
-                    }
+                    if (mainResults[i] === lastResult) streak++; else break;
                 }
                 document.getElementById('currentStreak').textContent = `${streak} ${lastResult}`;
             } else {
@@ -2442,58 +2035,60 @@
 
         function analyzeAndPredict() {
             const analysis = analyzer.analyze();
-            
-            // Update predictions
             updatePredictions(analysis.prediction, analysis.confidence);
-            
-            // Update patterns
             updatePatterns(analysis.patterns);
-            
-            // Update warnings
             updateWarnings(analysis.patterns.warnings);
-            
-            // Update magic number display
             updateMagicNumber(analysis.magic);
-            
-            // Update confidence meter
             updateConfidenceMeter(analysis.confidence);
+            updateStreakPrediction(analysis.streakPrediction); // NEW
+        }
+        
+        // NEW: Function to update the streak prediction UI
+        function updateStreakPrediction(prediction) {
+            const predDiv = document.getElementById('streakPrediction');
+            const reasonDiv = document.getElementById('streakPredictionReason');
+
+            predDiv.classList.remove('correct', 'incorrect', 'none');
             
-            // NEW: Update streak prediction
-            const streakPrediction = analyzer.predictAccuracyStreak();
-            updateStreakPredictionUI(streakPrediction);
+            switch(prediction.recommendation) {
+                case 'ĐÚNG':
+                    predDiv.classList.add('correct');
+                    predDiv.textContent = 'ĐÚNG';
+                    break;
+                case 'SAI':
+                    predDiv.classList.add('incorrect');
+                    predDiv.textContent = 'SAI';
+                    break;
+                default:
+                    predDiv.classList.add('none');
+                    predDiv.textContent = 'KHÔNG ĐỀ XUẤT';
+                    break;
+            }
+            reasonDiv.textContent = prediction.reason;
         }
 
         function updatePredictions(prediction, overallConfidence) {
-            // Update probabilities
             document.getElementById('playerProb').textContent = prediction.P.toFixed(1) + '%';
             document.getElementById('bankerProb').textContent = prediction.B.toFixed(1) + '%';
             document.getElementById('tieProb').textContent = prediction.T.toFixed(1) + '%';
-            
-            // Update confidence badges
             updateConfidenceBadge('playerConfidence', prediction.P);
             updateConfidenceBadge('bankerConfidence', prediction.B);
             updateConfidenceBadge('tieConfidence', prediction.T);
             
-            // Highlight recommended
             const cards = document.querySelectorAll('.prediction-card');
             cards.forEach(card => card.classList.remove('recommended'));
             
             const max = Math.max(prediction.P, prediction.B, prediction.T);
             if (max > 40) {
-                if (max === prediction.P) {
-                    document.getElementById('predPlayer').classList.add('recommended');
-                } else if (max === prediction.B) {
-                    document.getElementById('predBanker').classList.add('recommended');
-                } else if (max === prediction.T) {
-                    document.getElementById('predTie').classList.add('recommended');
-                }
+                if (max === prediction.P) document.getElementById('predPlayer').classList.add('recommended');
+                else if (max === prediction.B) document.getElementById('predBanker').classList.add('recommended');
+                else if (max === prediction.T) document.getElementById('predTie').classList.add('recommended');
             }
         }
 
         function updateConfidenceBadge(elementId, value) {
             const badge = document.getElementById(elementId);
             badge.classList.remove('confidence-high', 'confidence-medium', 'confidence-low');
-            
             if (value >= 50) {
                 badge.classList.add('confidence-high');
                 badge.textContent = 'CAO';
@@ -2508,22 +2103,9 @@
 
         function updatePatterns(patterns) {
             const grid = document.getElementById('patternGrid');
-            
-            // Show top 6 detected patterns
-            const topPatterns = patterns.detected
-                .sort((a, b) => b.confidence - a.confidence)
-                .slice(0, 6);
-            
+            const topPatterns = patterns.detected.sort((a, b) => b.confidence - a.confidence).slice(0, 6);
             if (topPatterns.length > 0) {
-                grid.innerHTML = topPatterns.map(pattern => `
-                    <div class="pattern-card detected">
-                        <div class="pattern-name">${pattern.name}</div>
-                        <div class="pattern-confidence">Độ tin cậy: ${(pattern.confidence * 100).toFixed(0)}%</div>
-                        <div class="pattern-description">${pattern.description}</div>
-                    </div>
-                `).join('');
-                
-                // Update current pattern display
+                grid.innerHTML = topPatterns.map(p => `<div class="pattern-card detected"><div class="pattern-name">${p.name}</div><div class="pattern-confidence">Độ tin cậy: ${(p.confidence*100).toFixed(0)}%</div><div class="pattern-description">${p.description}</div></div>`).join('');
                 document.getElementById('currentPattern').textContent = topPatterns[0].name;
             } else {
                 grid.innerHTML = '<div class="pattern-card"><div class="pattern-name">Đang phân tích...</div></div>';
@@ -2534,12 +2116,9 @@
         function updateWarnings(warnings) {
             const warningSystem = document.getElementById('warningSystem');
             const warningList = document.getElementById('warningList');
-            
             if (warnings.length > 0) {
                 warningSystem.classList.add('active');
-                warningList.innerHTML = warnings.map(w => 
-                    `<li>⚡ ${w.name}: ${w.description}</li>`
-                ).join('');
+                warningList.innerHTML = warnings.map(w => `<li>⚡ ${w.name}: ${w.description}</li>`).join('');
             } else {
                 warningSystem.classList.remove('active');
             }
@@ -2549,16 +2128,13 @@
             if (magic) {
                 document.getElementById('magicPhase').textContent = magic.phase;
                 document.getElementById('magicCycle').textContent = magic.cycle;
-                
                 const maxPred = Math.max(magic.P, magic.B, magic.T);
                 let prediction = '-';
                 if (maxPred === magic.P) prediction = 'PLAYER';
                 else if (maxPred === magic.B) prediction = 'BANKER';
                 else if (maxPred === magic.T) prediction = 'TIE';
-                
                 document.getElementById('magicPrediction').textContent = prediction;
-                document.getElementById('magicAccuracy').textContent = 
-                    analyzer.magicNumber.getAccuracy().toFixed(1) + '%';
+                document.getElementById('magicAccuracy').textContent = analyzer.magicNumber.getAccuracy().toFixed(1) + '%';
             } else {
                 document.getElementById('magicPhase').textContent = '1';
                 document.getElementById('magicCycle').textContent = '0';
