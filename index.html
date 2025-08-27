@@ -126,14 +126,14 @@
         <div class="space-y-6">
             <!-- Accuracy Stats -->
             <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
-                <h2 class="text-xl font-semibold mb-4 text-green-300">🎯 Thống Kê Độ Chính Xác (>80%)</h2>
+                <h2 class="text-xl font-semibold mb-4 text-green-300">🎯 Thống Kê Độ Chính Xác</h2>
                 <div class="space-y-4">
                     <div class="flex justify-between items-center bg-gray-700 p-4 rounded-lg">
                         <span class="font-medium text-gray-300">Tỷ Lệ Thắng</span>
                         <span id="accuracyRate" class="text-2xl font-bold text-green-400">0.0%</span>
                     </div>
                     <div class="flex justify-between items-center bg-gray-700 p-4 rounded-lg">
-                        <span class="font-medium text-gray-300">Thắng / Tổng Đề Xuất</span>
+                        <span class="font-medium text-gray-300">Thắng / Tổng Phán Đoán</span>
                         <div>
                             <span id="correctPredictions" class="text-lg font-semibold text-white">0</span>
                             <span class="text-gray-400">/</span>
@@ -244,14 +244,7 @@
                 const maxConfidence = Math.max(confidenceP, confidenceB);
                 const predictedWinner = votes.P > votes.B ? 'P' : 'B';
                 const analysisTextPrefix = `Tìm thấy ${allMatches.length} hình cầu tương tự. Lịch sử cho thấy:\n- PLAYER: ${votes.P.toFixed(1)} điểm\n- BANKER: ${votes.B.toFixed(1)} điểm`;
-                if (maxConfidence < 80) {
-                    return { 
-                        prediction: predictedWinner,
-                        isRecommended: false,
-                        analysisText: `${analysisTextPrefix}\n\n⚠️ Độ tin cậy (${maxConfidence.toFixed(1)}%) chưa đủ 80%. Nên bỏ qua.`, 
-                        confidence: maxConfidence 
-                    };
-                }
+                
                 const streakInfo = this.analyzeCurrentStreak(currentHistory);
                 let recommendation = '';
                 if (streakInfo.type === 'bệt' && predictedWinner === streakInfo.value) recommendation = `THEO CẦU BỆT (${streakInfo.value} x${streakInfo.length})`;
@@ -259,8 +252,9 @@
                 else if (streakInfo.type === '1-1' && predictedWinner !== currentHistory[currentHistory.length - 1]) recommendation = `THEO CẦU 1-1 (Dài ${streakInfo.length})`;
                 else if (streakInfo.type === '1-1' && predictedWinner === currentHistory[currentHistory.length - 1]) recommendation = `BẺ CẦU 1-1 (Dài ${streakInfo.length})`;
                 else recommendation = `THEO PHÂN TÍCH LỊCH SỬ`;
+                
                 const analysisText = `${analysisTextPrefix}\n\n🏆 Độ tin cậy: ${maxConfidence.toFixed(1)}%`;
-                return { prediction: predictedWinner, isRecommended: true, recommendation, analysisText, confidence: maxConfidence };
+                return { prediction: predictedWinner, recommendation, analysisText, confidence: maxConfidence };
             }
         }
 
@@ -284,10 +278,10 @@
                 this.currentPrediction = null;
             }
             getStats() {
-                const recommendedPredictions = this.predictions.filter(p => p.confidence >= 80);
-                const total = recommendedPredictions.length;
+                // This now calculates stats for ALL predictions made
+                const total = this.predictions.length;
                 if (total === 0) return { rate: 0, correct: 0, total: 0 };
-                const correct = recommendedPredictions.filter(p => p.predicted === p.actual).length;
+                const correct = this.predictions.filter(p => p.predicted === p.actual).length;
                 return { rate: (correct / total) * 100, correct, total };
             }
             reset() {
@@ -301,7 +295,8 @@
             currentSessionId: null,
             sessions: {},
             matcher: new PatternMatcher(),
-            accuracyTracker: new AccuracyTracker()
+            accuracyTracker: new AccuracyTracker(),
+            goldenRange: null // Will store the best range object {min, max, ...}
         };
 
         // --- UI UPDATE FUNCTIONS ---
@@ -353,20 +348,39 @@
         function updateAnalysisUI() {
             const currentHistory = state.sessions[state.currentSessionId]?.history || [];
             const allHistory = Object.values(state.sessions).map(s => s.history);
-            const { prediction, isRecommended, recommendation, analysisText, confidence } = state.matcher.getPrediction(currentHistory, allHistory);
+            const { prediction, recommendation, analysisText, confidence } = state.matcher.getPrediction(currentHistory, allHistory);
+            
             state.accuracyTracker.makePrediction(prediction, confidence);
+
             const analysisResultDiv = document.getElementById('analysisResult');
             const analysisCard = document.getElementById('analysis-card');
             analysisCard.classList.remove('card-glow-p', 'card-glow-b');
-            if (isRecommended) {
+
+            if (prediction) {
+                let finalAnalysisText = analysisText;
+                let isInGoldenRange = false;
+                if(state.goldenRange){
+                    if(confidence >= state.goldenRange.min && confidence <= state.goldenRange.max){
+                        isInGoldenRange = true;
+                    }
+                }
+
+                let recommendationNote = '';
+                if(isInGoldenRange){
+                    recommendationNote = `<div class="mt-2 p-2 text-center bg-green-800 bg-opacity-50 rounded-lg text-sm text-green-300 font-semibold">✨ Phán đoán này nằm trong KHOẢNG VÀNG!</div>`;
+                } else if (state.goldenRange) {
+                    recommendationNote = `<div class="mt-2 p-2 text-center bg-yellow-800 bg-opacity-50 rounded-lg text-sm text-yellow-300 font-semibold">⚠️ Cẩn trọng: Không thuộc Khoảng Vàng.</div>`;
+                }
+
                 analysisResultDiv.innerHTML = `
                     <div class="bg-gray-700 p-4 rounded-lg">
-                        <p class="text-gray-300 whitespace-pre-wrap">${analysisText}</p>
+                        <p class="text-gray-300 whitespace-pre-wrap">${finalAnalysisText}</p>
                     </div>
                     <div class="text-center bg-gray-900 py-6 rounded-lg border-2 ${prediction === 'P' ? 'border-blue-500' : 'border-red-500'}">
                         <p class="text-lg text-gray-400 mb-2">Đề xuất:</p>
                         <p class="text-3xl font-extrabold ${prediction === 'P' ? 'text-blue-400' : 'text-red-400'}">${recommendation}</p>
                         <p class="text-4xl font-bold mt-2">${prediction === 'P' ? '👤 PLAYER' : '🏦 BANKER'}</p>
+                        ${recommendationNote}
                     </div>
                 `;
                 analysisCard.classList.add(prediction === 'P' ? 'card-glow-p' : 'card-glow-b');
@@ -408,16 +422,18 @@
             let maxRate = -1;
             ranges.forEach(range => {
                 const rate = range.total > 0 ? ((range.wins / range.total) * 100) : -1;
-                if (range.total >= 3 && rate > maxRate) { // Only consider ranges with at least 3 data points
+                if (range.total >= 3 && rate > maxRate) {
                     maxRate = rate;
                     bestRange = range;
                 }
             });
+            
+            state.goldenRange = bestRange; // Store the best range globally
 
             if (bestRange) {
                 recommendationDiv.innerHTML = `<p class="text-sm text-yellow-300"><span class="font-bold">✨ Khoảng Vàng:</span> Tỷ lệ thắng cao nhất là <b class="text-green-400">${maxRate.toFixed(1)}%</b> trong khoảng <b class="text-white">${bestRange.min}%-${bestRange.max}%</b>.</p>`;
             } else {
-                recommendationDiv.innerHTML = `<p class="text-sm text-gray-400">Chưa đủ dữ liệu để tìm ra khoảng vàng.</p>`;
+                recommendationDiv.innerHTML = `<p class="text-sm text-gray-400">Chưa đủ dữ liệu để tìm ra khoảng vàng (cần tối thiểu 3 phán đoán trong 1 khoảng).</p>`;
             }
 
             let html = `
@@ -451,8 +467,8 @@
         function updateAllUI() {
             updateBigRoadUI();
             updateAccuracyUI();
+            updateConfidenceStatsUI(); // Must run before updateAnalysisUI to find the golden range
             updateAnalysisUI();
-            updateConfidenceStatsUI();
         }
 
         // --- EVENT HANDLERS & ACTIONS ---
