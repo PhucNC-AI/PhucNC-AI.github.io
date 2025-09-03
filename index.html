@@ -234,7 +234,8 @@
                             recommendation: 'TAY CHẮC CHẮN',
                             analysisText: `Tìm thấy ${occurrences.length} lần xuất hiện chính xác của hình cầu dài ${len} trong lịch sử.\nTất cả đều cho kết quả tiếp theo là: ${predictedWinner}`,
                             confidence: 100,
-                            isCertain: true
+                            isCertain: true,
+                            optimalLength: len
                         };
                     }
                 }
@@ -259,10 +260,43 @@
                     return { type: '1-1', length: length + 1 };
                 }
             }
+            
+            findBestPrediction(patternLength, currentHistory, allHistoricalSessions) {
+                 const pattern = currentHistory.slice(-patternLength);
+                 const patternString = pattern.join('');
+                 const occurrences = [];
 
-            getPrediction(currentHistory, allHistoricalSessions) {
+                 for (const session of allHistoricalSessions) {
+                     const sessionHistory = session.history || [];
+                     if (sessionHistory.length < patternLength + 1) continue;
+                     for (let i = 0; i <= sessionHistory.length - patternLength - 1; i++) {
+                         const segment = sessionHistory.slice(i, i + patternLength);
+                         if (segment.join('') === patternString) {
+                             occurrences.push(sessionHistory[i + patternLength]);
+                         }
+                     }
+                 }
+
+                 if (occurrences.length === 0) return null;
+
+                 const votes = { P: 0, B: 0 };
+                 occurrences.forEach(res => { if(votes[res] !== undefined) votes[res]++; });
+                 const totalVotes = votes.P + votes.B;
+                 const winner = votes.P > votes.B ? 'P' : 'B';
+                 const winRate = (Math.max(votes.P, votes.B) / totalVotes) * 100;
+
+                 return {
+                     len: patternLength,
+                     historicalRate: winRate,
+                     prediction: winner,
+                     occurrences: occurrences.length,
+                     votes: votes
+                 };
+            }
+
+            getPrediction(currentHistory, allHistoricalSessions, activePatternLength) {
                 if (currentHistory.length < this.MIN_HISTORY_FOR_ANALYSIS) {
-                    return { prediction: null, analysisText: `Cần ít nhất ${this.MIN_HISTORY_FOR_ANALYSIS} kết quả...`, confidence: 0, isCertain: false };
+                    return { prediction: null, analysisText: `Cần ít nhất ${this.MIN_HISTORY_FOR_ANALYSIS} kết quả...` };
                 }
                 
                 const certainPrediction = this.findCertainPrediction(currentHistory, allHistoricalSessions);
@@ -272,39 +306,14 @@
 
                 let bestAnalysis = null;
 
-                for (let len = Math.min(this.SEARCH_MAX_LEN, currentHistory.length); len >= this.SEARCH_MIN_LEN; len--) {
-                    const pattern = currentHistory.slice(-len);
-                    const patternString = pattern.join('');
-                    const occurrences = [];
-
-                    for (const session of allHistoricalSessions) {
-                        const sessionHistory = session.history || [];
-                        if (sessionHistory.length < len + 1) continue;
-                        for (let i = 0; i <= sessionHistory.length - len - 1; i++) {
-                            const segment = sessionHistory.slice(i, i + len);
-                            if (segment.join('') === patternString) {
-                                occurrences.push(sessionHistory[i + len]);
-                            }
-                        }
-                    }
-                    
-                    if (occurrences.length > 0) {
-                        const votes = { P: 0, B: 0 };
-                        occurrences.forEach(res => {
-                            if(votes[res] !== undefined) votes[res]++;
-                        });
-                        const totalVotes = votes.P + votes.B;
-                        const winner = votes.P > votes.B ? 'P' : 'B';
-                        const winRate = (Math.max(votes.P, votes.B) / totalVotes) * 100;
-                        
-                        if (!bestAnalysis || winRate > bestAnalysis.historicalRate) {
-                            bestAnalysis = {
-                                len: len,
-                                historicalRate: winRate,
-                                prediction: winner,
-                                occurrences: occurrences.length,
-                                votes: votes
-                            };
+                if (activePatternLength) {
+                    bestAnalysis = this.findBestPrediction(activePatternLength, currentHistory, allHistoricalSessions);
+                } else {
+                    // Re-optimize: find the best length
+                    for (let len = Math.min(this.SEARCH_MAX_LEN, currentHistory.length); len >= this.SEARCH_MIN_LEN; len--) {
+                        const analysis = this.findBestPrediction(len, currentHistory, allHistoricalSessions);
+                        if (analysis && (!bestAnalysis || analysis.historicalRate > bestAnalysis.historicalRate)) {
+                            bestAnalysis = analysis;
                         }
                     }
                 }
@@ -319,18 +328,20 @@
                     else if (streakInfo.type === '1-1' && predictedWinner === currentHistory[currentHistory.length - 1]) recommendation = `BẺ CẦU 1-1 (Dài ${streakInfo.length})`;
                     else recommendation = `THEO PHÂN TÍCH LỊCH SỬ`;
 
-                    const analysisText = `Phân tích tối ưu với độ dài cầu ${bestAnalysis.len} (Thắng ${bestAnalysis.historicalRate.toFixed(1)}%)\nTìm thấy ${bestAnalysis.occurrences} lần, kết quả:\n- PLAYER: ${bestAnalysis.votes.P} lần\n- BANKER: ${bestAnalysis.votes.B} lần`;
+                    const prefix = activePatternLength ? 'Duy trì' : 'Phân tích tối ưu với';
+                    const analysisText = `${prefix} độ dài cầu ${bestAnalysis.len} (Thắng ${bestAnalysis.historicalRate.toFixed(1)}%)\nTìm thấy ${bestAnalysis.occurrences} lần, kết quả:\n- PLAYER: ${bestAnalysis.votes.P} lần\n- BANKER: ${bestAnalysis.votes.B} lần`;
 
                     return {
                         prediction: bestAnalysis.prediction,
                         recommendation,
                         analysisText,
                         confidence: bestAnalysis.historicalRate,
-                        isCertain: false
+                        isCertain: false,
+                        optimalLength: bestAnalysis.len
                     };
                 }
                 
-                return { prediction: null, analysisText: 'Không tìm thấy hình cầu trùng khớp trong lịch sử.', confidence: 0, isCertain: false };
+                return { prediction: null, analysisText: 'Không tìm thấy hình cầu trùng khớp trong lịch sử.' };
             }
         }
 
@@ -412,10 +423,19 @@
         }
 
         function updateAnalysisUI() {
-            const currentHistory = state.sessions[state.currentSessionId]?.history || [];
+            const currentSession = state.sessions[state.currentSessionId];
+            if (!currentSession) return;
+
+            const currentHistory = currentSession.history || [];
             const allHistory = Object.values(state.sessions);
-            let { prediction, recommendation, analysisText, confidence, isCertain } = state.matcher.getPrediction(currentHistory, allHistory);
+            const activePatternLength = currentSession.activePatternLength;
+
+            let { prediction, recommendation, analysisText, confidence, isCertain, optimalLength } = state.matcher.getPrediction(currentHistory, allHistory, activePatternLength);
             
+            if (optimalLength) {
+                currentSession.activePatternLength = optimalLength;
+            }
+
             state.currentPrediction = { prediction, confidence };
 
             let finalPrediction = prediction;
@@ -476,7 +496,7 @@
                 `;
 
             } else {
-                analysisResultDiv.innerHTML = `<p class="text-gray-400 text-center py-8 whitespace-pre-wrap">${analysisText}</p>`;
+                analysisResultDiv.innerHTML = `<p class="text-gray-400 text-center py-8 whitespace-pre-wrap">${analysisText || ''}</p>`;
             }
         }
         
@@ -595,9 +615,17 @@
         // --- EVENT HANDLERS & ACTIONS ---
         function addResult(result) {
             if (!state.currentSessionId) return;
+            
+            const currentSession = state.sessions[state.currentSessionId];
 
             if (state.currentPrediction && state.currentPrediction.prediction) {
-                state.sessions[state.currentSessionId].predictions.push({ 
+                const wasCorrect = state.currentPrediction.prediction === result;
+                if (!wasCorrect) {
+                    // Reset active length on wrong prediction
+                    currentSession.activePatternLength = null;
+                }
+
+                currentSession.predictions.push({ 
                     predicted: state.currentPrediction.prediction, 
                     actual: result,
                     confidence: state.currentPrediction.confidence
@@ -605,21 +633,25 @@
             }
             state.currentPrediction = null; 
 
-            state.sessions[state.currentSessionId].history.push(result);
+            currentSession.history.push(result);
             
             saveSessions();
             updateAllUI();
         }
 
         function undoLast() {
-            if (!state.currentSessionId || state.sessions[state.currentSessionId].history.length === 0) return;
+            if (!state.currentSessionId) return;
+            const currentSession = state.sessions[state.currentSessionId];
+            if(currentSession.history.length === 0) return;
             
-            state.sessions[state.currentSessionId].history.pop();
+            currentSession.history.pop();
             
-            const predictions = state.sessions[state.currentSessionId].predictions;
-            if (predictions.length > 0) {
-                predictions.pop();
+            if (currentSession.predictions.length > 0) {
+                currentSession.predictions.pop();
             }
+
+            // After undoing, we don't know the state of the last prediction, so it's safer to re-optimize.
+            currentSession.activePatternLength = null;
             
             saveSessions();
             updateAllUI();
@@ -628,8 +660,10 @@
         function clearCurrentSessionHistory() {
             if (!state.currentSessionId) return;
             if (confirm('Bạn có chắc muốn xóa toàn bộ lịch sử và thống kê của phiên này không?')) {
-                state.sessions[state.currentSessionId].history = [];
-                state.sessions[state.currentSessionId].predictions = [];
+                const currentSession = state.sessions[state.currentSessionId];
+                currentSession.history = [];
+                currentSession.predictions = [];
+                currentSession.activePatternLength = null;
                 saveSessions();
                 updateAllUI();
             }
@@ -638,13 +672,13 @@
         // --- SESSION MANAGEMENT ---
         function getSessions() {
             try {
-                return JSON.parse(localStorage.getItem('baccaratPatternSessions_v4')) || {};
+                return JSON.parse(localStorage.getItem('baccaratPatternSessions_v5')) || {};
             } catch (e) { return {}; }
         }
 
         function saveSessions() {
-            localStorage.setItem('baccaratPatternSessions_v4', JSON.stringify(state.sessions));
-            localStorage.setItem('lastActiveSession_v4', state.currentSessionId);
+            localStorage.setItem('baccaratPatternSessions_v5', JSON.stringify(state.sessions));
+            localStorage.setItem('lastActiveSession_v5', state.currentSessionId);
         }
         
         function renameSession() {
@@ -680,7 +714,8 @@
             state.sessions[newId] = { 
                 name: `Phiên ${new Date().toLocaleString('vi-VN')}`, 
                 history: [],
-                predictions: []
+                predictions: [],
+                activePatternLength: null
             };
             saveSessions();
             updateSessionSelector();
@@ -695,7 +730,7 @@
             if (confirm('Bạn có chắc muốn xóa phiên này không?')) {
                 delete state.sessions[state.currentSessionId];
                 state.currentSessionId = null;
-                localStorage.removeItem('lastActiveSession_v4');
+                localStorage.removeItem('lastActiveSession_v5');
                 saveSessions();
                 initializeApp();
             }
@@ -705,7 +740,7 @@
             if (state.sessions[sessionId]) {
                 state.currentSessionId = sessionId;
                 state.currentPrediction = null;
-                localStorage.setItem('lastActiveSession_v4', state.currentSessionId);
+                localStorage.setItem('lastActiveSession_v5', state.currentSessionId);
                 updateSessionSelector();
                 updateAllUI();
             }
@@ -767,15 +802,15 @@
                         if(!session.name || !Array.isArray(session.history)) {
                              throw new Error("Invalid session data");
                         }
-                        if (!session.predictions) {
-                            session.predictions = [];
-                        }
+                        // Add new fields for backward compatibility
+                        if (!session.predictions) session.predictions = [];
+                        if (!session.activePatternLength) session.activePatternLength = null;
                     }
 
                     if (confirm('Dữ liệu hiện tại sẽ bị ghi đè. Bạn có chắc muốn tiếp tục?')) {
                         state.sessions = importedSessions;
                         state.currentSessionId = null;
-                        localStorage.removeItem('lastActiveSession_v4');
+                        localStorage.removeItem('lastActiveSession_v5');
                         saveSessions();
                         initializeApp();
                         alert('Nhập dữ liệu thành công!');
@@ -793,7 +828,7 @@
         function initializeApp() {
             loadSettings();
             state.sessions = getSessions();
-            const lastActiveId = localStorage.getItem('lastActiveSession_v4');
+            const lastActiveId = localStorage.getItem('lastActiveSession_v5');
 
             if (Object.keys(state.sessions).length === 0) {
                 createNewSession();
