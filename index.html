@@ -312,8 +312,13 @@
                     // Re-optimize: find the best length
                     for (let len = Math.min(this.SEARCH_MAX_LEN, currentHistory.length); len >= this.SEARCH_MIN_LEN; len--) {
                         const analysis = this.findBestPrediction(len, currentHistory, allHistoricalSessions);
-                        if (analysis && (!bestAnalysis || analysis.historicalRate > bestAnalysis.historicalRate)) {
-                            bestAnalysis = analysis;
+                        if (analysis) {
+                            if (!bestAnalysis || analysis.historicalRate > bestAnalysis.historicalRate) {
+                                bestAnalysis = analysis;
+                            } else if (analysis.historicalRate === bestAnalysis.historicalRate && analysis.occurrences > bestAnalysis.occurrences) {
+                                // Tie-breaker: same rate, higher occurrences wins
+                                bestAnalysis = analysis;
+                            }
                         }
                     }
                 }
