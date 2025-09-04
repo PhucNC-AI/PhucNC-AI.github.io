@@ -185,6 +185,20 @@
                     <p class="text-gray-400 text-center py-8">Cần ít nhất 10 kết quả để bắt đầu phân tích...</p>
                 </div>
             </div>
+
+            <!-- Manual Length Selection -->
+            <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
+                 <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-teal-300">🔬 Phân Tích & Chọn Thủ Công</h2>
+                    <button id="autoModeBtn" onclick="switchToAuto()" class="btn bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg text-sm">Tự Động Tối Ưu</button>
+                </div>
+                <p class="text-sm text-gray-400 mb-4">
+                    Dữ liệu dưới đây cho thấy phán đoán của từng độ dài cầu cho ván <strong>trước ván vừa kết thúc</strong>. Bấm vào một nút để "ghim" độ dài đó cho ván tiếp theo.
+                </p>
+                <div id="manualLengthSelector" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <p class="text-gray-500 col-span-full text-center py-4">Cần thêm dữ liệu lịch sử để hiển thị phân tích chi tiết.</p>
+                </div>
+            </div>
             
             <!-- Confidence Stats Table -->
             <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
@@ -437,7 +451,7 @@
 
             let { prediction, recommendation, analysisText, confidence, isCertain, optimalLength } = state.matcher.getPrediction(currentHistory, allHistory, activePatternLength);
             
-            if (optimalLength) {
+            if (optimalLength && !activePatternLength) { // Only set optimal length if in auto mode
                 currentSession.activePatternLength = optimalLength;
             }
 
@@ -608,6 +622,90 @@
             }
         }
 
+        function updateManualLengthSelectorUI() {
+            const selectorDiv = document.getElementById('manualLengthSelector');
+            selectorDiv.innerHTML = ''; 
+
+            const currentSession = state.sessions[state.currentSessionId];
+            if (!currentSession) return;
+
+            const autoBtn = document.getElementById('autoModeBtn');
+            if (currentSession.activePatternLength === null) {
+                autoBtn.classList.remove('bg-gray-600', 'hover:bg-gray-500');
+                autoBtn.classList.add('bg-purple-600', 'ring-2', 'ring-purple-400');
+            } else {
+                autoBtn.classList.add('bg-gray-600', 'hover:bg-gray-500');
+                autoBtn.classList.remove('bg-purple-600', 'ring-2', 'ring-purple-400');
+            }
+
+            const history = currentSession.history || [];
+            if (history.length < state.matcher.SEARCH_MIN_LEN + 2) {
+                selectorDiv.innerHTML = '<p class="text-gray-500 col-span-full text-center py-4">Cần thêm dữ liệu lịch sử để phân tích.</p>';
+                return;
+            }
+            
+            const analysisHistory = history.slice(0, -1);
+            const lastActualResult = history[history.length - 1];
+            const allHistory = Object.values(state.sessions);
+
+            for (let len = state.matcher.SEARCH_MIN_LEN; len <= state.matcher.SEARCH_MAX_LEN; len++) {
+                if (analysisHistory.length < len) continue;
+
+                const analysis = state.matcher.findBestPrediction(len, analysisHistory, allHistory);
+                const button = document.createElement('button');
+                button.className = 'btn text-left p-3 rounded-lg transition-all duration-200';
+                
+                let contentHTML = '';
+                if (analysis) {
+                    const predicted = analysis.prediction;
+                    const rate = analysis.historicalRate;
+                    const wasCorrect = predicted === lastActualResult;
+
+                    let bgColor = 'bg-gray-700 hover:bg-gray-600';
+                    let borderColor = 'border-gray-600';
+
+                    if (wasCorrect) {
+                        bgColor = 'bg-green-800 bg-opacity-50 hover:bg-green-700';
+                        borderColor = 'border-green-500';
+                    }
+
+                    if (currentSession.activePatternLength === len) {
+                        bgColor = 'bg-purple-600 hover:bg-purple-500';
+                        borderColor = 'border-purple-400 ring-2 ring-purple-400';
+                    }
+
+                    button.className += ` ${bgColor} border ${borderColor}`;
+                    button.onclick = () => manualSelectLength(len);
+
+                    contentHTML = `
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-lg text-white">Cầu ${len}</span>
+                            <span class="px-2 py-1 text-xs font-semibold rounded ${predicted === 'P' ? 'bg-blue-500' : 'bg-red-500'}">${predicted}</span>
+                        </div>
+                        <div class="text-sm mt-1 ${wasCorrect ? 'text-green-300' : 'text-gray-400'}">
+                            Tỷ lệ: <span class="font-semibold">${rate.toFixed(1)}%</span>
+                        </div>
+                         <div class="text-xs mt-1 text-gray-400">
+                            (${analysis.occurrences} lần: ${analysis.votes.P}P, ${analysis.votes.B}B)
+                        </div>
+                    `;
+                } else {
+                    button.className += ' bg-gray-800 cursor-not-allowed';
+                    button.disabled = true;
+                    contentHTML = `
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-lg text-gray-500">Cầu ${len}</span>
+                        </div>
+                        <div class="text-sm mt-1 text-gray-600">
+                           Không có dữ liệu
+                        </div>
+                    `;
+                }
+                button.innerHTML = contentHTML;
+                selectorDiv.appendChild(button);
+            }
+        }
+
 
         function updateAllUI() {
             updateBigRoadUI();
@@ -615,7 +713,29 @@
             updateGlobalAccuracyUI();
             updateConfidenceStatsUI(); 
             updateAnalysisUI();
+            updateManualLengthSelectorUI();
         }
+
+        function manualSelectLength(length) {
+            const currentSession = state.sessions[state.currentSessionId];
+            if (currentSession) {
+                currentSession.activePatternLength = length;
+                saveSessions();
+                updateAnalysisUI(); 
+                updateManualLengthSelectorUI(); 
+            }
+        }
+        
+        function switchToAuto() {
+            const currentSession = state.sessions[state.currentSessionId];
+            if (currentSession) {
+                currentSession.activePatternLength = null;
+                saveSessions();
+                updateAnalysisUI();
+                updateManualLengthSelectorUI();
+            }
+        }
+
 
         // --- EVENT HANDLERS & ACTIONS ---
         function addResult(result) {
@@ -625,8 +745,7 @@
 
             if (state.currentPrediction && state.currentPrediction.prediction) {
                 const wasCorrect = state.currentPrediction.prediction === result;
-                if (!wasCorrect) {
-                    // Reset active length on wrong prediction
+                if (!wasCorrect && currentSession.activePatternLength !== null) { // Only switch to auto if in manual mode and wrong
                     currentSession.activePatternLength = null;
                 }
 
@@ -655,7 +774,6 @@
                 currentSession.predictions.pop();
             }
 
-            // After undoing, we don't know the state of the last prediction, so it's safer to re-optimize.
             currentSession.activePatternLength = null;
             
             saveSessions();
@@ -677,13 +795,13 @@
         // --- SESSION MANAGEMENT ---
         function getSessions() {
             try {
-                return JSON.parse(localStorage.getItem('baccaratPatternSessions_v5')) || {};
+                return JSON.parse(localStorage.getItem('baccaratPatternSessions_v6')) || {};
             } catch (e) { return {}; }
         }
 
         function saveSessions() {
-            localStorage.setItem('baccaratPatternSessions_v5', JSON.stringify(state.sessions));
-            localStorage.setItem('lastActiveSession_v5', state.currentSessionId);
+            localStorage.setItem('baccaratPatternSessions_v6', JSON.stringify(state.sessions));
+            localStorage.setItem('lastActiveSession_v6', state.currentSessionId);
         }
         
         function renameSession() {
@@ -735,7 +853,7 @@
             if (confirm('Bạn có chắc muốn xóa phiên này không?')) {
                 delete state.sessions[state.currentSessionId];
                 state.currentSessionId = null;
-                localStorage.removeItem('lastActiveSession_v5');
+                localStorage.removeItem('lastActiveSession_v6');
                 saveSessions();
                 initializeApp();
             }
@@ -745,7 +863,7 @@
             if (state.sessions[sessionId]) {
                 state.currentSessionId = sessionId;
                 state.currentPrediction = null;
-                localStorage.setItem('lastActiveSession_v5', state.currentSessionId);
+                localStorage.setItem('lastActiveSession_v6', state.currentSessionId);
                 updateSessionSelector();
                 updateAllUI();
             }
@@ -815,7 +933,7 @@
                     if (confirm('Dữ liệu hiện tại sẽ bị ghi đè. Bạn có chắc muốn tiếp tục?')) {
                         state.sessions = importedSessions;
                         state.currentSessionId = null;
-                        localStorage.removeItem('lastActiveSession_v5');
+                        localStorage.removeItem('lastActiveSession_v6');
                         saveSessions();
                         initializeApp();
                         alert('Nhập dữ liệu thành công!');
@@ -833,7 +951,7 @@
         function initializeApp() {
             loadSettings();
             state.sessions = getSessions();
-            const lastActiveId = localStorage.getItem('lastActiveSession_v5');
+            const lastActiveId = localStorage.getItem('lastActiveSession_v6');
 
             if (Object.keys(state.sessions).length === 0) {
                 createNewSession();
