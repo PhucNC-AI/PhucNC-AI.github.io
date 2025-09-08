@@ -90,12 +90,20 @@
                          <button onclick="deleteSelectedSession()" class="btn w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-4 rounded-lg">🗑️ Xóa</button> 
                      </div> 
                  </div> 
-                  <!-- Import/Export --> 
+                 <!-- Import/Export --> 
                  <div class="flex flex-col sm:flex-row gap-4"> 
                      <button onclick="exportData()" class="btn w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-4 rounded-lg">📤 Xuất Dữ Liệu</button> 
                      <button onclick="document.getElementById('fileInput').click()" class="btn w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-4 rounded-lg">📥 Nhập Dữ Liệu</button> 
                      <input type="file" id="fileInput" class="hidden" accept=".json" onchange="importData(event)"> 
                  </div> 
+
+                 <!-- Reliable Session Analysis (MOVED HERE) -->
+                 <div id="reliable-sessions-container" class="bg-gray-900/50 mt-6 p-4 rounded-xl shadow-inner border-2 border-transparent transition-all duration-500">
+                     <h2 class="text-lg font-semibold mb-3 text-amber-300">💡 Các "Bàn Xịn" Đã Tìm Thấy</h2>
+                     <div id="reliableSessionsResult" class="space-y-3">
+                         <p class="text-gray-400 text-center py-2">Đang phân tích các phiên...</p>
+                     </div>
+                 </div>
              </div> 
 
              <!-- Input Section --> 
@@ -152,15 +160,7 @@
 
          <!-- Right Column: Analysis & Stats --> 
          <div class="space-y-6"> 
-             <!-- Reliable Session Analysis --> 
-             <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border-2 border-transparent transition-all duration-500" id="reliable-sessions-container"> 
-                 <h2 class="text-xl font-semibold mb-4 text-amber-300">💡 Các "Bàn Xịn" Đã Tìm Thấy</h2> 
-                 <div id="reliableSessionsResult" class="space-y-3"> 
-                     <p class="text-gray-400 text-center py-4">Đang phân tích các phiên...</p> 
-                 </div> 
-             </div> 
-
-             <!-- Accuracy Stats --> 
+              <!-- Accuracy Stats --> 
              <div class="bg-gray-800 p-6 rounded-2xl shadow-lg"> 
                  <h2 class="text-xl font-semibold mb-4 text-green-300">🎯 Thống Kê (Phiên Hiện Tại)</h2> 
                  <div class="space-y-4"> 
@@ -220,6 +220,14 @@
 
          </div> 
      </div> 
+
+     <!-- Progress Overlay -->
+     <div id="progress-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50 transition-opacity duration-300">
+        <div class="text-white text-xl mb-4 font-semibold">Đang tính toán lại dữ liệu...</div>
+        <div class="w-11/12 max-w-lg bg-gray-600 rounded-full h-6 shadow-lg">
+            <div id="progress-bar" class="bg-blue-600 h-6 rounded-full text-center text-white font-bold transition-all duration-300" style="width: 0%;">0%</div>
+        </div>
+    </div>
 
      <script> 
          // --- CORE LOGIC: PATTERN MATCHER --- 
@@ -793,7 +801,7 @@
              } else { 
                  containerCard.classList.add('border-transparent'); 
                  containerCard.classList.remove('border-amber-400', 'card-glow-certain'); 
-                 container.innerHTML = '<p class="text-gray-400 text-center py-4">Chưa tìm thấy "bàn xịn" nào. Hãy tiếp tục nhập dữ liệu.</p>'; 
+                 container.innerHTML = '<p class="text-gray-400 text-center py-2">Chưa tìm thấy "bàn xịn" nào.</p>'; 
              } 
          } 
 
@@ -1056,14 +1064,25 @@
                      } 
 
                      if (confirm('Dữ liệu hiện tại sẽ bị ghi đè VÀ TÍNH TOÁN LẠI TỪ ĐẦU. Quá trình này có thể mất một lúc với dữ liệu lớn. Bạn có chắc muốn tiếp tục?')) { 
-                         document.body.style.cursor = 'wait'; 
+                         const overlay = document.getElementById('progress-overlay');
+                         const progressBar = document.getElementById('progress-bar');
+                         overlay.classList.remove('hidden');
+                         progressBar.style.width = '0%';
+                         progressBar.textContent = '0%';
 
                          setTimeout(() => {
                             try {
                                 const allSessionsForReprocessing = Object.values(importedSessions);
+                                const totalGamesToProcess = allSessionsForReprocessing.reduce((sum, s) => sum + (s.history ? s.history.length : 0), 0);
+                                let gamesProcessed = 0;
 
                                 for (const sessionId in importedSessions) {
-                                    recalculateSession(importedSessions[sessionId], allSessionsForReprocessing);
+                                    gamesProcessed = recalculateSession(
+                                        importedSessions[sessionId], 
+                                        allSessionsForReprocessing,
+                                        totalGamesToProcess,
+                                        gamesProcessed
+                                    );
                                 }
 
                                 state.sessions = importedSessions; 
@@ -1072,17 +1091,16 @@
                                 saveSessions(); 
                                 initializeApp(); 
                                 
-                                document.body.style.cursor = 'default';
                                 alert('Nhập và tính toán lại dữ liệu thành công!'); 
                             } catch (recalcError) {
-                                document.body.style.cursor = 'default';
                                 alert('Đã xảy ra lỗi trong quá trình tính toán lại. Vui lòng kiểm tra console để biết chi tiết.');
                                 console.error("Recalculation error:", recalcError);
+                            } finally {
+                                overlay.classList.add('hidden');
                             }
                          }, 100);
                      } 
                  } catch (error) { 
-                     document.body.style.cursor = 'default';
                      alert('Lỗi: File dữ liệu không hợp lệ. Vui lòng kiểm tra lại file.'); 
                      console.error("Import error:", error); 
                  } finally { 
@@ -1092,13 +1110,15 @@
              reader.readAsText(file); 
          } 
 
-         function recalculateSession(sessionToReprocess, allSessionsData) {
-            const originalHistory = [...sessionToReprocess.history];
+         function recalculateSession(sessionToReprocess, allSessionsData, totalGames, gamesProcessedSoFar) {
+            const originalHistory = [...(sessionToReprocess.history || [])];
             
             sessionToReprocess.history = [];
             sessionToReprocess.predictions = [];
             sessionToReprocess.lengthPerformance = {};
             sessionToReprocess.optimalLength = null;
+
+            const progressBar = document.getElementById('progress-bar');
 
             for (let i = 0; i < originalHistory.length; i++) {
                 const result = originalHistory[i];
@@ -1126,7 +1146,15 @@
                 }
                 
                 sessionToReprocess.history.push(result);
+
+                gamesProcessedSoFar++;
+                const percent = totalGames > 0 ? Math.round((gamesProcessedSoFar / totalGames) * 100) : 100;
+                if (progressBar && parseInt(progressBar.textContent) !== percent) {
+                    progressBar.style.width = `${percent}%`;
+                    progressBar.textContent = `${percent}%`;
+                }
             }
+            return gamesProcessedSoFar;
         }
 
          function initializeApp() { 
@@ -1154,5 +1182,4 @@
      </script> 
  </body> 
  </html>
-
 
