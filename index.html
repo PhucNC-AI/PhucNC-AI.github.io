@@ -784,8 +784,8 @@
         }
 
         async function callGeminiAPI(prompt, base64ImageData, mimeType) {
-            const apiKey = ""; 
-            const apiUrl = `https://generativelaunguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${apiKey}`;
+            const apiKey = "AIzaSyCbw9bh5vtINmNdtkX_r5O7e0hw8wD3xKY"; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${apiKey}`;
             const payload = {contents: [{parts: [{ text: prompt }, { inline_data: { mime_type: mimeType, data: base64ImageData } }]}]};
             
             // Retry logic
@@ -841,4 +841,3 @@
     </script>
 </body>
 </html>
-
