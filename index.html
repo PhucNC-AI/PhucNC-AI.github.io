@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ Thống Phân Tích Cầu (AI Vision Batch)</title>
+    <title>Hệ Thống Phân Tích Cầu (Thống Kê Nâng Cao)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -32,6 +32,13 @@
         .card-glow-certain {
             box-shadow: 0 0 25px rgba(250, 204, 21, 0.7);
         }
+        .card-glow-reliable {
+            box-shadow: 0 0 25px rgba(22, 163, 74, 0.6); /* green-600 */
+        }
+        .card-glow-unreliable {
+             box-shadow: 0 0 25px rgba(220, 38, 38, 0.5); /* red-600 */
+        }
+        /* Big Road Styles */
         #bigRoadDisplay {
             display: grid;
             grid-auto-flow: column;
@@ -81,50 +88,9 @@
             animation: pulse-glow 2.5s infinite ease-in-out;
             border-color: #ef4444;
         }
-        #loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            color: white;
-            flex-direction: column;
-            backdrop-filter: blur(5px);
-        }
-        .loader {
-            border: 8px solid #4A5568;
-            border-top: 8px solid #6366F1;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            animation: spin 1.5s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        #sessionSelector option.reliable {
-            color: #4ade80; /* green-400 */
-            font-weight: 700;
-        }
-        #sessionSelector option.unreliable {
-            color: #f87171; /* red-400 */
-            font-weight: 700;
-        }
     </style>
 </head>
 <body class="p-4 md:p-8">
-
-    <!-- Loading Overlay -->
-    <div id="loading-overlay" class="hidden">
-        <div class="loader"></div>
-        <p id="loading-text" class="mt-4 text-xl font-semibold">AI đang phân tích hình ảnh...</p>
-    </div>
 
     <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
 
@@ -132,8 +98,8 @@
         <div class="lg:col-span-2 space-y-6">
             <!-- Header -->
             <div class="bg-gray-800 p-6 rounded-2xl shadow-lg text-center">
-                <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-teal-400">Hệ Thống Phân Tích Cầu</h1>
-                <p class="text-gray-400 mt-2">Ghi nhớ - Đối chiếu - Phán đoán - <span class="font-bold text-teal-400">AI Vision Batch</span></p>
+                <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-red-400">Hệ Thống Phân Tích Hình Cầu</h1>
+                <p class="text-gray-400 mt-2">Ghi nhớ - Đối chiếu - Phán đoán</p>
             </div>
 
             <!-- Session Management -->
@@ -148,12 +114,10 @@
                     </div>
                 </div>
                  <!-- Import/Export -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <button onclick="exportData()" class="btn w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-4 rounded-lg">📤 Xuất JSON</button>
-                    <button onclick="document.getElementById('fileInput').click()" class="btn w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-4 rounded-lg">📥 Nhập JSON</button>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <button onclick="exportData()" class="btn w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-4 rounded-lg">📤 Xuất Dữ Liệu</button>
+                    <button onclick="document.getElementById('fileInput').click()" class="btn w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-4 rounded-lg">📥 Nhập Dữ Liệu</button>
                     <input type="file" id="fileInput" class="hidden" accept=".json" onchange="importData(event)">
-                    <button onclick="document.getElementById('imageInput').click()" class="btn w-full bg-teal-600 hover:bg-teal-500 text-white font-bold py-3 px-4 rounded-lg">🖼️ Nhập (Nhiều) Ảnh</button>
-                    <input type="file" id="imageInput" class="hidden" accept="image/*" onchange="importFromImage(event)" multiple>
                 </div>
             </div>
 
@@ -172,6 +136,27 @@
                      <button onclick="undoLast()" class="btn flex-1 bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-4 rounded-lg">↩️ Hoàn Tác</button>
                      <button onclick="clearCurrentSessionHistory()" class="btn flex-1 bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-3 px-4 rounded-lg">🗑️ Xóa Lịch Sử</button>
                 </div>
+            </div>
+            
+            <!-- Analysis Settings -->
+            <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
+                <h2 class="text-xl font-semibold mb-4 text-purple-300">⚙️ Cài Đặt Phân Tích (Thủ công)</h2>
+                <p class="text-sm text-gray-400 mb-4">Cài đặt này chỉ được sử dụng khi hệ thống chưa tìm thấy chiều dài cầu tối ưu.</p>
+                <div class="space-y-4">
+                    <div>
+                        <label for="minPatternLength" class="block text-sm font-medium text-gray-300 mb-1">Độ dài cầu tối thiểu để so sánh</label>
+                        <input type="number" id="minPatternLength" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label for="maxPatternLength" class="block text-sm font-medium text-gray-300 mb-1">Độ dài cầu tối đa để so sánh</label>
+                        <input type="number" id="maxPatternLength" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label for="minCertainOccurrences" class="block text-sm font-medium text-gray-300 mb-1">Số lần lặp lại tối thiểu cho "Tay Chắc Chắn"</label>
+                        <input type="number" id="minCertainOccurrences" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                    </div>
+                </div>
+                <button onclick="saveSettings()" class="btn w-full mt-6 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-4 rounded-lg">Lưu Cài Đặt</button>
             </div>
 
             <!-- History Display -->
@@ -247,7 +232,7 @@
                 this.MIN_HISTORY_FOR_ANALYSIS = 10;
                 this.MIN_PATTERN_LENGTH = 10;
                 this.MAX_PATTERN_LENGTH = 15;
-                this.MIN_CERTAIN_OCCURRENCES = 2;
+                this.MIN_CERTAIN_OCCURRENCES = 2; // Default value
             }
 
             calculateSimilarity(arr1, arr2) {
@@ -258,6 +243,8 @@
 
             findPatternOccurrences(pattern, allHistory) {
                 const occurrences = [];
+                // This check is now more dynamic, so we rely on the calling function's length checks
+                // if (pattern.length < this.MIN_PATTERN_LENGTH) return occurrences;
                 const reversedPattern = [...pattern].reverse();
 
                 for (const session of allHistory) {
@@ -267,8 +254,12 @@
                     for (let i = 0; i <= sessionHistory.length - pattern.length - 1; i++) {
                         const segment = sessionHistory.slice(i, i + pattern.length);
                         const nextResult = sessionHistory[i + pattern.length];
-                        if (this.calculateSimilarity(pattern, segment) >= 0.9) occurrences.push({ type: 'similar', next: nextResult });
-                        if (this.calculateSimilarity(reversedPattern, segment) >= 0.9) occurrences.push({ type: 'reversed', next: nextResult });
+                        const similarity = this.calculateSimilarity(pattern, segment);
+                        
+                        if (similarity >= 0.9) occurrences.push({ type: 'similar', next: nextResult, similarity });
+                        
+                        const reverseSimilarity = this.calculateSimilarity(reversedPattern, segment);
+                        if (reverseSimilarity >= 0.9) occurrences.push({ type: 'reversed', next: nextResult, similarity: reverseSimilarity });
                     }
                 }
                 return occurrences;
@@ -276,18 +267,24 @@
 
             getPredictionForPattern(pattern, allHistoricalSessions) {
                  const occurrences = this.findPatternOccurrences(pattern, allHistoricalSessions);
-                if (occurrences.length === 0) return { prediction: null };
+        
+                if (occurrences.length === 0) {
+                    return { prediction: null };
+                }
 
                 const votes = { P: 0, B: 0 };
                 occurrences.forEach(match => {
-                    if (votes[match.next] !== undefined) votes[match.next]++;
+                    if (votes[match.next] !== undefined) votes[match.next] += match.similarity;
                 });
 
                 const totalVotes = votes.P + votes.B;
-                if (totalVotes === 0) return { prediction: null };
+                if (totalVotes === 0) {
+                    return { prediction: null };
+                }
                 
                 const predictedWinner = votes.P > votes.B ? 'P' : 'B';
                 const confidence = (Math.max(votes.P, votes.B) / totalVotes) * 100;
+                
                 return { prediction: predictedWinner, confidence, votes, totalOccurrences: occurrences.length };
             }
             
@@ -304,7 +301,8 @@
                         for (let i = 0; i <= sessionHistory.length - pattern.length - 1; i++) {
                             const segment = sessionHistory.slice(i, i + pattern.length);
                             if (segment.join('') === patternString) {
-                                occurrences.push(sessionHistory[i + pattern.length]);
+                                const nextResult = sessionHistory[i + pattern.length];
+                                occurrences.push(nextResult);
                             }
                         }
                     }
@@ -323,10 +321,12 @@
                 return null;
             }
 
+
             analyzeCurrentStreak(currentHistory) {
-                if (currentHistory.length < 2) return { type: 'none' };
+                if (currentHistory.length < 2) return { type: 'none', length: currentHistory.length };
                 const last = currentHistory[currentHistory.length - 1];
-                if (last === currentHistory[currentHistory.length - 2]) {
+                const secondLast = currentHistory[currentHistory.length - 2];
+                if (last === secondLast) {
                     let length = 0;
                     for (let i = currentHistory.length - 1; i >= 0; i--) {
                         if (currentHistory[i] === last) length++; else break;
@@ -343,39 +343,74 @@
 
             getPrediction(currentHistory, allHistoricalSessions, { optimalLength = null, lengthPerformance = {} } = {}) {
                 if (currentHistory.length < this.MIN_HISTORY_FOR_ANALYSIS) {
-                    return { prediction: null, analysisText: `Cần ít nhất ${this.MIN_HISTORY_FOR_ANALYSIS} kết quả...`, confidence: 0 };
+                    return { prediction: null, analysisText: `Cần ít nhất ${this.MIN_HISTORY_FOR_ANALYSIS} kết quả...`, confidence: 0, isCertain: false };
                 }
                 
+                // --- NEW: Optimal Length Logic ---
                 if (optimalLength && currentHistory.length >= optimalLength) {
-                    const { prediction, confidence, votes } = this.getPredictionForPattern(currentHistory.slice(-optimalLength), allHistoricalSessions);
-                    if (prediction) {
+                    const pattern = currentHistory.slice(-optimalLength);
+                    const result = this.getPredictionForPattern(pattern, allHistoricalSessions);
+                    if (result.prediction) {
                         const perf = lengthPerformance[optimalLength] || { wins: 0, total: 0 };
                         const rate = perf.total > 0 ? (perf.wins / perf.total * 100).toFixed(1) : 'N/A';
-                        const analysisText = `Sử dụng chiều dài cầu tối ưu: ${optimalLength} ván.\n(Tỷ lệ thắng của chiều dài này: ${rate}%)\nLịch sử: P: ${votes.P} - B: ${votes.B}`;
-                        return { prediction, recommendation: 'THEO CẦU TỐI ƯU', analysisText, confidence };
+                        const analysisText = `Sử dụng chiều dài cầu tối ưu: ${optimalLength} ván.\n(Tỷ lệ thắng của chiều dài này: ${rate}% - ${perf.wins}/${perf.total})\n\nLịch sử cho thấy:\n- PLAYER: ${result.votes.P.toFixed(1)} điểm\n- BANKER: ${result.votes.B.toFixed(1)} điểm`;
+                        return { 
+                            prediction: result.prediction, 
+                            recommendation: 'THEO CHIỀU DÀI TỐI ƯU',
+                            analysisText, 
+                            confidence: result.confidence,
+                            isCertain: false
+                        };
                     }
                 }
                 
+                // --- FALLBACK: Original Logic ---
                 const certainPrediction = this.findCertainPrediction(currentHistory, allHistoricalSessions);
-                if (certainPrediction) return certainPrediction;
+                if (certainPrediction) {
+                    return certainPrediction;
+                }
 
+                const allMatches = [];
                 for (let len = Math.min(this.MAX_PATTERN_LENGTH, currentHistory.length); len >= this.MIN_PATTERN_LENGTH; len--) {
                     const pattern = currentHistory.slice(-len);
-                    const { prediction, confidence, votes, totalOccurrences } = this.getPredictionForPattern(pattern, allHistoricalSessions);
-                    if (prediction) {
-                        const analysisTextPrefix = `Tìm thấy ${totalOccurrences} hình cầu tương tự (dài ${len}).\nLịch sử cho thấy: P: ${votes.P} - B: ${votes.B}`;
-                        const streakInfo = this.analyzeCurrentStreak(currentHistory);
-                        let recommendation = `THEO LỊCH SỬ`;
-                        if (streakInfo.type === 'bệt' && prediction === streakInfo.value) recommendation = `THEO CẦU BỆT (${streakInfo.value}x${streakInfo.length})`;
-                        else if (streakInfo.type === 'bệt') recommendation = `BẺ CẦU BỆT (${streakInfo.value}x${streakInfo.length})`;
-                        else if (streakInfo.type === '1-1' && prediction !== currentHistory[currentHistory.length - 1]) recommendation = `THEO CẦU 1-1 (Dài ${streakInfo.length})`;
-                        else if (streakInfo.type === '1-1') recommendation = `BẺ CẦU 1-1 (Dài ${streakInfo.length})`;
-                        
-                        return { prediction, recommendation, analysisText: `${analysisTextPrefix}\n\n🏆 Độ tin cậy: ${confidence.toFixed(1)}%`, confidence };
+                    const occurrences = this.findPatternOccurrences(pattern, allHistoricalSessions);
+                    if (occurrences.length > 0) {
+                        allMatches.push(...occurrences);
+                        break; 
                     }
                 }
 
-                return { prediction: null, analysisText: 'Không tìm thấy hình cầu tương tự (chế độ thủ công).', confidence: 0 };
+                if (allMatches.length === 0) {
+                    return { prediction: null, analysisText: 'Không tìm thấy hình cầu tương tự (chế độ thủ công).', confidence: 0, isCertain: false };
+                }
+
+                const votes = { P: 0, B: 0 };
+                allMatches.forEach(match => {
+                    if (votes[match.next] !== undefined) votes[match.next] += match.similarity;
+                });
+
+                const totalVotes = votes.P + votes.B;
+                if (totalVotes === 0) {
+                    return { prediction: null, analysisText: 'Không tìm thấy hình cầu tương tự (chế độ thủ công).', confidence: 0, isCertain: false };
+                }
+
+                const confidenceP = (votes.P / totalVotes) * 100;
+                const confidenceB = (votes.B / totalVotes) * 100;
+                const maxConfidence = Math.max(confidenceP, confidenceB);
+                const predictedWinner = votes.P > votes.B ? 'P' : 'B';
+
+                const analysisTextPrefix = `Tìm thấy ${allMatches.length} hình cầu tương tự. Lịch sử cho thấy:\n- PLAYER: ${votes.P.toFixed(1)} điểm\n- BANKER: ${votes.B.toFixed(1)} điểm`;
+                
+                const streakInfo = this.analyzeCurrentStreak(currentHistory);
+                let recommendation = '';
+                if (streakInfo.type === 'bệt' && predictedWinner === streakInfo.value) recommendation = `THEO CẦU BỆT (${streakInfo.value} x${streakInfo.length})`;
+                else if (streakInfo.type === 'bệt' && predictedWinner !== streakInfo.value) recommendation = `BẺ CẦU BỆT (${streakInfo.value} x${streakInfo.length})`;
+                else if (streakInfo.type === '1-1' && predictedWinner !== currentHistory[currentHistory.length - 1]) recommendation = `THEO CẦU 1-1 (Dài ${streakInfo.length})`;
+                else if (streakInfo.type === '1-1' && predictedWinner === currentHistory[currentHistory.length - 1]) recommendation = `BẺ CẦU 1-1 (Dài ${streakInfo.length})`;
+                else recommendation = `THEO PHÂN TÍCH LỊCH SỬ`;
+                
+                const analysisText = `${analysisTextPrefix}\n\n🏆 Độ tin cậy: ${maxConfidence.toFixed(1)}%`;
+                return { prediction: predictedWinner, recommendation, analysisText, confidence: maxConfidence, isCertain: false };
             }
         }
 
@@ -388,14 +423,16 @@
             reliableRanges: []
         };
         
-        // --- STATS & UI ---
-        const getPredictionStats = (predictions) => {
+        // --- STATS CALCULATION ---
+        function getPredictionStats(predictions) {
             const total = predictions.length;
             if (total === 0) return { rate: 0, correct: 0, total: 0 };
             const correct = predictions.filter(p => p.predicted === p.actual).length;
             return { rate: (correct / total) * 100, correct, total };
-        };
+        }
 
+
+        // --- UI UPDATE FUNCTIONS ---
         function updateBigRoadUI() {
             const history = state.sessions[state.currentSessionId]?.history || [];
             const roadDiv = document.getElementById('bigRoadDisplay');
@@ -403,15 +440,17 @@
 
             if (history.length === 0) {
                 roadDiv.innerHTML = '<p class="text-gray-500 p-4">Chưa có kết quả...</p>';
+                roadDiv.style.display = 'block';
                 return;
             }
+            roadDiv.style.display = 'grid';
             roadDiv.innerHTML = '';
 
             const columns = [];
             if (history.length > 0) {
                 let currentCol = [history[0]];
                 for (let i = 1; i < history.length; i++) {
-                    if (history[i] === currentCol[0]) {
+                    if (history[i] === history[i-1]) {
                         currentCol.push(history[i]);
                     } else {
                         columns.push(currentCol);
@@ -426,13 +465,20 @@
                 colDiv.className = 'road-col';
                 colData.forEach(item => {
                     const itemDiv = document.createElement('div');
-                    itemDiv.className = `road-item ${item === 'P' ? 'bg-blue-600' : 'bg-red-600'}`;
+                    const bgColor = item === 'P' ? 'bg-blue-600' : 'bg-red-600';
+                    itemDiv.className = `road-item ${bgColor}`;
                     itemDiv.textContent = item;
                     colDiv.appendChild(itemDiv);
                 });
                 roadDiv.appendChild(colDiv);
             });
             roadDiv.scrollLeft = roadDiv.scrollWidth;
+        }
+
+        function updateAccuracyUI() {
+            const predictions = state.sessions[state.currentSessionId]?.predictions || [];
+            const stats = getPredictionStats(predictions);
+            document.getElementById('accuracyRate').textContent = `${stats.rate.toFixed(1)}%`;
         }
 
         function updateGlobalAccuracyUI() {
@@ -444,8 +490,15 @@
         }
 
         function updateAnalysisUI() {
-            const session = state.sessions[state.currentSessionId] || { history: [] };
-            const { prediction, recommendation, analysisText, confidence, isCertain } = state.matcher.getPrediction(session.history, Object.values(state.sessions), session);
+            const session = state.sessions[state.currentSessionId] || { history: [], optimalLength: null, lengthPerformance: {} };
+            const currentHistory = session.history;
+            const allHistory = Object.values(state.sessions);
+
+            let { prediction, recommendation, analysisText, confidence, isCertain } = state.matcher.getPrediction(currentHistory, allHistory, {
+                optimalLength: session.optimalLength,
+                lengthPerformance: session.lengthPerformance
+            });
+            
             state.currentPrediction = { prediction, confidence };
 
             let finalPrediction = prediction;
@@ -454,14 +507,15 @@
 
             if (prediction && !isCertain) {
                 const activeRange = state.reliableRanges.find(r => confidence >= r.min && confidence < r.max);
+
                 if (activeRange) {
                     if (activeRange.type === 'low') {
                         finalPrediction = prediction === 'P' ? 'B' : 'P';
-                        finalRecommendation = `ĐÁNH NGƯỢỢC (${activeRange.min}-${activeRange.max}%)`;
-                        recommendationNote = `<div class="mt-2 p-2 text-center bg-red-800 bg-opacity-50 rounded-lg text-sm text-red-300 font-semibold">⚠️ Đảo ngược! Khoảng này có tỷ lệ thắng thấp (${activeRange.rate.toFixed(1)}%) và đang trong chuỗi thua.</div>`;
-                    } else {
+                        finalRecommendation = `ĐÁNH NGƯỢC (Khoảng ${activeRange.min}-${activeRange.max}%)`;
+                        recommendationNote = `<div class="mt-2 p-2 text-center bg-red-800 bg-opacity-50 rounded-lg text-sm text-red-300 font-semibold">⚠️ Đảo ngược! Khoảng tin cậy này có tỷ lệ thắng thấp (${activeRange.rate.toFixed(1)}%) và đang trong chuỗi thua.</div>`;
+                    } else if (activeRange.type === 'high') {
                         finalRecommendation = `THEO KHOẢNG VÀNG (${activeRange.min}-${activeRange.max}%)`;
-                        recommendationNote = `<div class="mt-2 p-2 text-center bg-green-800 bg-opacity-50 rounded-lg text-sm text-green-300 font-semibold">✨ Tin cậy! Phán đoán thuộc khoảng vàng (${activeRange.rate.toFixed(1)}%) và đang trong chuỗi thắng.</div>`;
+                        recommendationNote = `<div class="mt-2 p-2 text-center bg-green-800 bg-opacity-50 rounded-lg text-sm text-green-300 font-semibold">✨ Tin cậy! Phán đoán này thuộc khoảng vàng (${activeRange.rate.toFixed(1)}%) và đang trong chuỗi thắng.</div>`;
                     }
                 } else if (state.reliableRanges.length > 0) {
                      recommendationNote = `<div class="mt-2 p-2 text-center bg-yellow-800 bg-opacity-50 rounded-lg text-sm text-yellow-300 font-semibold">⚠️ Cẩn trọng: Không thuộc Khoảng Tin Cậy của phiên.</div>`;
@@ -471,181 +525,325 @@
             const analysisResultDiv = document.getElementById('analysisResult');
             const analysisCard = document.getElementById('analysis-card');
             analysisCard.classList.remove('card-glow-p', 'card-glow-b', 'card-glow-certain');
-            
+
+            let optimalLengthDisplay = '';
+            if (session.optimalLength) {
+                optimalLengthDisplay = `<div class="mb-4 p-3 bg-gray-900 rounded-lg text-center text-cyan-300 text-sm">
+                    <span class="font-semibold">Chiều dài cầu tối ưu đang áp dụng:</span>
+                    <span class="text-lg font-bold ml-2">${session.optimalLength}</span>
+                </div>`;
+            }
+
             if (finalPrediction) {
                 let predictionBlockHTML = '';
                 if (isCertain) {
-                    predictionBlockHTML = `<div class="text-center bg-yellow-800 bg-opacity-50 py-6 rounded-lg border-2 border-yellow-400"><p class="text-lg text-yellow-300 mb-2 animate-pulse">Đề Xuất Chắc Chắn:</p><p class="text-3xl font-extrabold text-yellow-300">${finalRecommendation}</p><p class="text-4xl font-bold mt-2">${finalPrediction === 'P' ? '👤 PLAYER' : '🏦 BANKER'}</p></div>`;
+                    predictionBlockHTML = `
+                        <div class="text-center bg-yellow-800 bg-opacity-50 py-6 rounded-lg border-2 border-yellow-400">
+                            <p class="text-lg text-yellow-300 mb-2 animate-pulse">Đề Xuất Chắc Chắn (Lịch sử):</p>
+                            <p class="text-3xl font-extrabold text-yellow-300">${finalRecommendation}</p>
+                            <p class="text-4xl font-bold mt-2">${finalPrediction === 'P' ? '👤 PLAYER' : '🏦 BANKER'}</p>
+                        </div>
+                    `;
                     analysisCard.classList.add('card-glow-certain');
                 } else {
-                    const colorClass = finalPrediction === 'P' ? 'blue' : 'red';
-                    predictionBlockHTML = `<div class="text-center bg-gray-900 py-6 rounded-lg border-2 border-${colorClass}-500"><p class="text-lg text-gray-400 mb-2">Đề xuất:</p><p class="text-3xl font-extrabold text-${colorClass}-400">${finalRecommendation}</p><p class="text-4xl font-bold mt-2">${finalPrediction === 'P' ? '👤 PLAYER' : '🏦 BANKER'}</p>${recommendationNote}</div>`;
-                    analysisCard.classList.add(`card-glow-${finalPrediction.toLowerCase()}`);
+                    predictionBlockHTML = `
+                        <div class="text-center bg-gray-900 py-6 rounded-lg border-2 ${finalPrediction === 'P' ? 'border-blue-500' : 'border-red-500'}">
+                            <p class="text-lg text-gray-400 mb-2">Đề xuất:</p>
+                            <p class="text-3xl font-extrabold ${finalPrediction === 'P' ? 'text-blue-400' : 'text-red-400'}">${finalRecommendation}</p>
+                            <p class="text-4xl font-bold mt-2">${finalPrediction === 'P' ? '👤 PLAYER' : '🏦 BANKER'}</p>
+                            ${recommendationNote}
+                        </div>
+                    `;
+                    analysisCard.classList.add(finalPrediction === 'P' ? 'card-glow-p' : 'card-glow-b');
                 }
-                analysisResultDiv.innerHTML = `<div class="bg-gray-700 p-4 rounded-lg"><p class="text-gray-300 whitespace-pre-wrap">${analysisText}</p></div>${predictionBlockHTML}`;
+
+                analysisResultDiv.innerHTML = `
+                    ${optimalLengthDisplay}
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <p class="text-gray-300 whitespace-pre-wrap">${analysisText}</p>
+                    </div>
+                    ${predictionBlockHTML}
+                `;
+
             } else {
-                analysisResultDiv.innerHTML = `<p class="text-gray-400 text-center py-8 whitespace-pre-wrap">${analysisText}</p>`;
+                analysisResultDiv.innerHTML = `
+                    ${optimalLengthDisplay}
+                    <p class="text-gray-400 text-center py-8 whitespace-pre-wrap">${analysisText}</p>
+                `;
             }
         }
-        
-        // --- NEW: Standalone Reliability Calculator ---
-        function calculateSessionReliability(sessionId) {
-            const predictions = state.sessions[sessionId]?.predictions || [];
-            if (predictions.length < 7) return 'neutral';
 
-            const ranges = [
-                {min: 50, max: 60}, {min: 60, max: 70}, {min: 70, max: 80},
-                {min: 80, max: 90}, {min: 90, max: 100.1}
-            ];
-
-            for (const range of ranges) {
-                const predictionsForRange = predictions.filter(p => p.confidence >= range.min && p.confidence < range.max);
-                const total = predictionsForRange.length;
-                if (total === 0) continue;
-
-                const wins = predictionsForRange.filter(p => p.predicted === p.actual).length;
-                const rate = (wins / total) * 100;
-                
-                let lastResultIsWin = null;
-                if (predictionsForRange.length > 0) {
-                    const lastPrediction = predictionsForRange[predictionsForRange.length-1];
-                    lastResultIsWin = lastPrediction.predicted === lastPrediction.actual;
-                }
-
-                if (rate > 70 && total >= 7 && lastResultIsWin) return 'high';
-                if (rate < 30 && total >= 10 && !lastResultIsWin) return 'low';
-            }
-            return 'neutral';
-        }
-
-        function updateConfidenceStatsUI() {
-            if (!state.currentSessionId) return;
-            state.reliableRanges = []; 
-            const predictions = state.sessions[state.currentSessionId].predictions || [];
-            document.getElementById('accuracyRate').textContent = `${getPredictionStats(predictions).rate.toFixed(1)}%`;
-            
-            const ranges = [
-                {min: 50, max: 60}, {min: 60, max: 70}, {min: 70, max: 80},
-                {min: 80, max: 90}, {min: 90, max: 100.1}
-            ].map(range => ({...range, total: 0, wins: 0, rate: -1, trendIndicator: ''}));
-
-            ranges.forEach(range => {
-                const predictionsForRange = predictions.filter(p => p.confidence >= range.min && p.confidence < range.max);
-                range.total = predictionsForRange.length;
-                range.wins = predictionsForRange.filter(p => p.predicted === p.actual).length;
-                if (range.total > 0) range.rate = (range.wins / range.total) * 100;
-
-                let streak = 0;
-                let lastResultIsWin = null;
-                if (range.total >= 1) {
-                    lastResultIsWin = predictionsForRange[range.total - 1].predicted === predictionsForRange[range.total - 1].actual;
-                    for (let i = range.total - 1; i >= 0; i--) {
-                        if ((predictionsForRange[i].predicted === predictionsForRange[i].actual) === lastResultIsWin) streak++;
-                        else break;
-                    }
-                    if (streak > 0) {
-                        const color = lastResultIsWin ? 'green' : 'red';
-                        const path = lastResultIsWin ? 'M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z' : 'M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z';
-                        range.trendIndicator = `<span class="flex items-center text-${color}-400 ml-1.5" title="Chuỗi ${lastResultIsWin ? 'thắng' : 'thua'} ${streak}"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="${path}" clip-rule="evenodd"></path></svg><span class="font-bold text-xs">${streak}</span></span>`;
-                    }
-                }
-                
-                if (range.rate > 70 && range.total >= 7 && lastResultIsWin) state.reliableRanges.push({...range, type: 'high'});
-                if (range.rate < 30 && range.total >= 10 && !lastResultIsWin) state.reliableRanges.push({...range, type: 'low'});
-            });
-            
+        function updateSessionStatusUI() {
             const card = document.getElementById('session-status-card');
+            const title = document.getElementById('session-status-title');
+            const desc = document.getElementById('session-status-description');
+            
+            card.classList.remove('session-reliable', 'session-unreliable');
+
             const highRange = state.reliableRanges.find(r => r.type === 'high');
             const lowRange = state.reliableRanges.find(r => r.type === 'low');
 
-            card.className = 'bg-gray-900 border-2 p-4 rounded-2xl shadow-lg transition-all duration-500'; // Reset
             if (highRange) {
                 card.style.display = 'block';
                 card.classList.add('session-reliable');
-                document.getElementById('session-status-title').textContent = '✅ PHIÊN TIN CẬY';
-                document.getElementById('session-status-title').className = "text-xl font-bold mb-2 text-center text-green-400";
-                document.getElementById('session-status-description').textContent = `Khoảng ${highRange.min}-${highRange.max}% có tỷ lệ thắng cao (${highRange.rate.toFixed(1)}%) và đang trong chuỗi thắng.`;
+                title.textContent = '✅ PHIÊN TIN CẬY';
+                title.className = "text-xl font-bold mb-2 text-center text-green-400";
+                desc.textContent = `Khoảng ${highRange.min}-${highRange.max}% đang có tỷ lệ thắng cao (${highRange.rate.toFixed(1)}%) và đang trong chuỗi thắng.`;
             } else if (lowRange) {
                 card.style.display = 'block';
                 card.classList.add('session-unreliable');
-                document.getElementById('session-status-title').textContent = '⚠️ PHIÊN TIN CẬY (ĐÁNH NGƯỢC)';
-                document.getElementById('session-status-title').className = "text-xl font-bold mb-2 text-center text-red-400";
-                document.getElementById('session-status-description').textContent = `Khoảng ${lowRange.min}-${lowRange.max}% có tỷ lệ thắng thấp (${lowRange.rate.toFixed(1)}%) và đang trong chuỗi thua.`;
+                title.textContent = '⚠️ PHIÊN TIN CẬY (ĐÁNH NGƯỢC)';
+                 title.className = "text-xl font-bold mb-2 text-center text-red-400";
+                desc.textContent = `Khoảng ${lowRange.min}-${lowRange.max}% có tỷ lệ thắng thấp (${lowRange.rate.toFixed(1)}%) và đang trong chuỗi thua. Có thể đánh ngược lại đề xuất trong khoảng này.`;
             } else {
                 card.style.display = 'none';
             }
-            
+        }
+        
+        function updateConfidenceStatsUI() {
+            if (!state.currentSessionId || !state.sessions[state.currentSessionId]) return;
+            state.reliableRanges = []; // Reset before recalculating
+
+            const sessionPredictions = state.sessions[state.currentSessionId].predictions || [];
+            const ranges = [
+                {min: 50, max: 60, total: 0, wins: 0},
+                {min: 60, max: 70, total: 0, wins: 0},
+                {min: 70, max: 80, total: 0, wins: 0},
+                {min: 80, max: 90, total: 0, wins: 0},
+                {min: 90, max: 100.1, total: 0, wins: 0}, // Use 100.1 to include 100
+            ];
+
             const tableDiv = document.getElementById('confidenceStatsTable');
-            let html = `<div class="grid gap-x-2 text-xs font-semibold text-gray-400 px-3" style="grid-template-columns: 4fr 2fr 2fr 4fr;"><span class="text-left">Khoảng</span><span class="text-center">Tổng</span><span class="text-center">Thắng</span><span class="text-right">Tỷ Lệ</span></div>`;
-            if (predictions.length === 0) {
-                 tableDiv.innerHTML = '<p class="text-gray-500 text-center py-4">Chưa có dữ liệu thống kê.</p>';
+
+            ranges.forEach(range => {
+                const predictionsForRange = sessionPredictions.filter(p => {
+                    const confidence = p.confidence;
+                    return confidence >= range.min && confidence < range.max;
+                });
+                
+                range.total = predictionsForRange.length;
+                range.wins = predictionsForRange.filter(p => p.predicted === p.actual).length;
+                const rate = range.total > 0 ? ((range.wins / range.total) * 100) : -1;
+                range.rate = rate;
+                
+                // Calculate trend and streak
+                let trendIndicator = '';
+                let streak = 0;
+                let lastResultIsWin = null;
+
+                if (predictionsForRange.length >= 1) {
+                    lastResultIsWin = (predictionsForRange[predictionsForRange.length - 1].predicted === predictionsForRange[predictionsForRange.length - 1].actual);
+                    for (let i = predictionsForRange.length - 1; i >= 0; i--) {
+                        const currentResultIsWin = (predictionsForRange[i].predicted === predictionsForRange[i].actual);
+                        if (currentResultIsWin === lastResultIsWin) {
+                            streak++;
+                        } else {
+                            break;
+                        }
+                    }
+
+                    if (streak >= 1) {
+                        if (lastResultIsWin) {
+                            trendIndicator = `<span class="flex items-center text-green-400 ml-1.5" title="Chuỗi thắng ${streak}">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path></svg>
+                                <span class="font-bold text-xs">${streak}</span>
+                                </span>`;
+                        } else {
+                            trendIndicator = `<span class="flex items-center text-red-400 ml-1.5" title="Chuỗi thua ${streak}">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                                <span class="font-bold text-xs">${streak}</span>
+                                </span>`;
+                        }
+                    }
+                }
+                range.trendIndicator = trendIndicator;
+                
+                // Check for reliable ranges based on user criteria
+                if (rate > 70 && range.total >= 7 && lastResultIsWin === true) {
+                    state.reliableRanges.push({...range, type: 'high'});
+                }
+                if (rate < 30 && range.total >= 10 && lastResultIsWin === false) {
+                     state.reliableRanges.push({...range, type: 'low'});
+                }
+            });
+
+            updateSessionStatusUI(); // Call this to update the new status card
+
+            let html = `
+                <div class="grid gap-x-2 text-xs font-semibold text-gray-400 px-3" style="grid-template-columns: 4fr 2fr 2fr 4fr;">
+                    <span class="text-left">Khoảng</span>
+                    <span class="text-center">Tổng</span>
+                    <span class="text-center">Thắng</span>
+                    <span class="text-right">Tỷ Lệ</span>
+                </div>
+            `;
+            if (sessionPredictions.length === 0) {
+                tableDiv.innerHTML = '<p class="text-gray-500 text-center py-4">Chưa có dữ liệu thống kê cho phiên này.</p>';
             } else {
                  ranges.forEach(range => {
+                    const rate = range.rate;
                     const isReliable = state.reliableRanges.some(r => r.min === range.min);
                     let highlightClass = 'bg-gray-700 bg-opacity-50';
-                    if (isReliable) {
-                        const type = state.reliableRanges.find(r => r.min === range.min).type;
-                        highlightClass = type === 'high' ? 'bg-green-800 bg-opacity-40 border border-green-500' : 'bg-red-800 bg-opacity-40 border border-red-500';
+                    if(isReliable) {
+                        const reliableType = state.reliableRanges.find(r => r.min === range.min).type;
+                        highlightClass = reliableType === 'high' ? 'bg-green-800 bg-opacity-40 border border-green-500' : 'bg-red-800 bg-opacity-40 border border-red-500';
                     }
-                    const rateText = range.rate > -1 ? `${range.rate.toFixed(1)}%` : '-';
-                    const rateColor = range.rate >= 70 ? 'text-green-400' : (range.rate >= 50 ? 'text-yellow-400' : (range.rate === -1 ? 'text-gray-400' : 'text-red-400'));
-                    html += `<div class="grid gap-x-2 items-center ${highlightClass} p-3 rounded-lg mt-2 text-sm" style="grid-template-columns: 4fr 2fr 2fr 4fr;"><span class="font-medium">${range.min}%-${range.max === 100.1 ? '100' : range.max-0.1}%</span><span class="text-center">${range.total}</span><span class="text-center">${range.wins}</span><span class="font-bold flex items-center justify-end ${rateColor}">${rateText}${range.trendIndicator}</span></div>`;
+                     
+                    html += `
+                        <div class="grid gap-x-2 items-center ${highlightClass} p-3 rounded-lg mt-2 transition-all duration-300 text-sm" style="grid-template-columns: 4fr 2fr 2fr 4fr;">
+                            <span class="font-medium text-gray-300 text-left">${range.min}%-${range.max === 100.1 ? '100' : range.max-0.1}%</span>
+                            <span class="text-white font-semibold text-center">${range.total}</span>
+                            <span class="text-green-400 font-semibold text-center">${range.wins}</span>
+                            <span class="font-bold flex items-center justify-end ${rate >= 70 ? 'text-green-400' : (rate >= 50 ? 'text-yellow-400' : (rate === -1 ? 'text-gray-400' : 'text-red-400'))}">
+                                ${rate > -1 ? rate.toFixed(1) + '%' : '-'}
+                                ${range.trendIndicator}
+                            </span>
+                        </div>
+                    `;
                 });
                 tableDiv.innerHTML = html;
             }
         }
 
+
         function updateAllUI() {
             updateBigRoadUI();
+            updateAccuracyUI();
             updateGlobalAccuracyUI();
-            updateConfidenceStatsUI(); 
+            updateConfidenceStatsUI(); // This now MUST run before updateAnalysisUI
             updateAnalysisUI();
         }
 
-        // --- ACTIONS ---
+        // --- EVENT HANDLERS & ACTIONS ---
         function addResult(result) {
             if (!state.currentSessionId) return;
             const session = state.sessions[state.currentSessionId];
-            
-            const { prediction, confidence } = state.matcher.getPrediction(session.history, Object.values(state.sessions), session);
-            if (prediction) {
-                session.predictions.push({ predicted: prediction, actual: result, confidence });
+            const historyBeforeAdd = [...session.history];
+            const allSessions = Object.values(state.sessions);
+
+            // New logic: Update stats and find optimal length based on the result being added
+            const newOptimalLength = updateLengthPerformanceAndFindOptimal(historyBeforeAdd, allSessions, result);
+            session.optimalLength = newOptimalLength;
+
+            // Original logic: Store the last prediction vs actual result
+            if (state.currentPrediction && state.currentPrediction.prediction !== null) {
+                session.predictions.push({ 
+                    predicted: state.currentPrediction.prediction, 
+                    actual: result,
+                    confidence: state.currentPrediction.confidence
+                });
             }
-            
+            state.currentPrediction = null; 
+
             session.history.push(result);
+            
             saveSessions();
             updateAllUI();
-            updateSessionSelector(); // Update selector to show new count and potential status change
+        }
+
+        // --- NEW: Optimal Length Finder ---
+        function updateLengthPerformanceAndFindOptimal(history, allSessions, newResult) {
+            const session = state.sessions[state.currentSessionId];
+            if (!session.lengthPerformance) {
+                session.lengthPerformance = {};
+            }
+
+            const candidates = [];
+
+            for (let len = 10; len <= 20; len++) {
+                if (history.length < len) continue;
+
+                const pattern = history.slice(-len);
+                const { prediction } = state.matcher.getPredictionForPattern(pattern, allSessions);
+
+                if (prediction) {
+                    // Initialize stats if not present
+                    if (!session.lengthPerformance[len]) {
+                        session.lengthPerformance[len] = { wins: 0, total: 0 };
+                    }
+                    
+                    // Update stats for this length based on its prediction for the newResult
+                    const stats = session.lengthPerformance[len];
+                    stats.total++;
+                    if (prediction === newResult) {
+                        stats.wins++;
+                    }
+                    
+                    // Check if this length is a candidate for being the new optimal
+                    // A length is a candidate if its prediction for the previous hand matched the new result
+                    if (prediction === newResult) {
+                        candidates.push({
+                            length: len,
+                            rate: stats.wins / stats.total,
+                            total: stats.total
+                        });
+                    }
+                }
+            }
+            
+            if (candidates.length === 0) {
+                return session.optimalLength; // Keep the old one if no candidates found
+            }
+
+            // Sort by rate desc, then total desc
+            candidates.sort((a, b) => {
+                if (b.rate !== a.rate) {
+                    return b.rate - a.rate;
+                }
+                return b.total - a.total;
+            });
+            
+            return candidates[0].length; // The new optimal length
         }
 
         function undoLast() {
-            if (!state.currentSessionId) return;
-            const session = state.sessions[state.currentSessionId];
-            if (session.history.length === 0) return;
+            if (!state.currentSessionId || state.sessions[state.currentSessionId].history.length === 0) return;
             
-            const lastResult = session.history[session.history.length-1];
-            // Find if the last action created a prediction record.
-            const correspondingPredictionIndex = session.predictions.findIndex(p => p.actual === lastResult);
-            if (correspondingPredictionIndex > -1) {
-                 session.predictions.pop();
+            state.sessions[state.currentSessionId].history.pop();
+            
+            const predictions = state.sessions[state.currentSessionId].predictions;
+            if (predictions.length > 0) {
+                predictions.pop();
             }
-            session.history.pop();
             
             saveSessions();
             updateAllUI();
-            updateSessionSelector();
         }
-        
+
+        function clearCurrentSessionHistory() {
+            if (!state.currentSessionId) return;
+            if (confirm('Bạn có chắc muốn xóa toàn bộ lịch sử và thống kê của phiên này không?')) {
+                const session = state.sessions[state.currentSessionId];
+                session.history = [];
+                session.predictions = [];
+                session.lengthPerformance = {};
+                session.optimalLength = null;
+                saveSessions();
+                updateAllUI();
+            }
+        }
+
         // --- SESSION MANAGEMENT ---
         function getSessions() {
             try {
-                return JSON.parse(localStorage.getItem('baccaratPatternSessions_v7')) || {};
+                return JSON.parse(localStorage.getItem('baccaratPatternSessions_v5')) || {};
             } catch (e) { return {}; }
         }
 
         function saveSessions() {
-            localStorage.setItem('baccaratPatternSessions_v7', JSON.stringify(state.sessions));
-            localStorage.setItem('lastActiveSession_v7', state.currentSessionId);
+            localStorage.setItem('baccaratPatternSessions_v5', JSON.stringify(state.sessions));
+            localStorage.setItem('lastActiveSession_v5', state.currentSessionId);
+        }
+        
+        function renameSession() {
+            if (!state.currentSessionId) return;
+            const currentName = state.sessions[state.currentSessionId].name;
+            const newName = prompt("Nhập tên mới cho phiên:", currentName);
+            if (newName && newName.trim() !== "") {
+                state.sessions[state.currentSessionId].name = newName.trim();
+                saveSessions();
+                updateSessionSelector();
+            }
         }
 
         function updateSessionSelector() {
@@ -657,186 +855,166 @@
                 const session = state.sessions[sessionId];
                 const option = document.createElement('option');
                 option.value = sessionId;
-                
-                const status = calculateSessionReliability(sessionId);
-                let statusIndicator = '';
-                if (status === 'high') {
-                    statusIndicator = ' [✅ TIN CẬY]';
-                    option.className = 'reliable';
-                } else if (status === 'low') {
-                    statusIndicator = ' [⚠️ ĐÁNH NGƯỢỢC]';
-                    option.className = 'unreliable';
-                }
-                
-                option.textContent = `${session.name} (${session.history.length} ván)${statusIndicator}`;
+                option.textContent = `${session.name} (${session.history.length} ván)`;
                 selector.appendChild(option);
             });
             selector.value = state.currentSessionId;
             selector.onchange = () => loadSession(selector.value);
         }
 
-        function createNewSession(history = [], name = null) {
+        function createNewSession() {
             const newId = `session-${Date.now()}`;
-            const sessionName = name ? name.replace(/\.[^/.]+$/, "") : `Phiên ${new Date().toLocaleString('vi-VN')}`;
+            state.currentSessionId = newId;
             state.sessions[newId] = { 
-                name: sessionName, 
-                history: history,
+                name: `Phiên ${new Date().toLocaleString('vi-VN')}`, 
+                history: [],
                 predictions: [],
                 lengthPerformance: {},
                 optimalLength: null
             };
-            state.currentSessionId = newId; // Set the new session as active
             saveSessions();
-            updateAllUI(); // Update UI for the new active session
-            // The final update to selector will happen after all batch operations
+            updateSessionSelector();
+            updateAllUI();
         }
-        
+
         function deleteSelectedSession() {
             if (!state.currentSessionId || Object.keys(state.sessions).length <= 1) {
                 alert('Không thể xóa phiên cuối cùng.');
                 return;
             }
-            if (confirm(`Bạn có chắc muốn xóa phiên "${state.sessions[state.currentSessionId].name}" không?`)) {
+            if (confirm('Bạn có chắc muốn xóa phiên này không?')) {
                 delete state.sessions[state.currentSessionId];
                 state.currentSessionId = null;
+                localStorage.removeItem('lastActiveSession_v5');
                 saveSessions();
                 initializeApp();
-            }
-        }
-        
-        function clearCurrentSessionHistory() {
-             if (!state.currentSessionId) return;
-            if (confirm('Xóa toàn bộ lịch sử và thống kê của phiên này?')) {
-                const session = state.sessions[state.currentSessionId];
-                session.history = [];
-                session.predictions = [];
-                saveSessions();
-                updateAllUI();
-                updateSessionSelector();
             }
         }
 
         function loadSession(sessionId) {
             if (state.sessions[sessionId]) {
                 state.currentSessionId = sessionId;
-                localStorage.setItem('lastActiveSession_v7', state.currentSessionId);
-                updateAllUI();
-                // Ensure selector value is correct without rebuilding it
-                document.getElementById('sessionSelector').value = sessionId;
-            }
-        }
-        
-        function renameSession() {
-            if (!state.currentSessionId) return;
-            const currentName = state.sessions[state.currentSessionId].name;
-            const newName = prompt("Nhập tên mới:", currentName);
-            if (newName && newName.trim() !== "") {
-                state.sessions[state.currentSessionId].name = newName.trim();
-                saveSessions();
+                state.currentPrediction = null;
+                localStorage.setItem('lastActiveSession_v5', state.currentSessionId);
                 updateSessionSelector();
+                updateAllUI();
             }
         }
         
-        // --- IMPORT / EXPORT ---
-        async function importFromImage(event) {
-            const files = event.target.files;
-            if (!files || files.length === 0) return;
+        // --- SETTINGS ---
+        function saveSettings() {
+            const settings = {
+                minPatternLength: document.getElementById('minPatternLength').value,
+                maxPatternLength: document.getElementById('maxPatternLength').value,
+                minCertainOccurrences: document.getElementById('minCertainOccurrences').value
+            };
+            localStorage.setItem('baccaratSettings_v1', JSON.stringify(settings));
+            applySettings(settings);
+            alert('Cài đặt đã được lưu!');
+            updateAnalysisUI(); // Re-run analysis with new settings
+        }
 
-            const loadingOverlay = document.getElementById('loading-overlay');
-            const loadingText = document.getElementById('loading-text');
-            loadingOverlay.classList.remove('hidden');
-
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                loadingText.textContent = `AI đang phân tích ảnh ${i + 1} / ${files.length}...`;
-                try {
-                    const base64ImageData = await toBase64(file);
-                    const prompt = `Analyze the provided image of a Baccarat 'Big Road' scoreboard. Identify the sequence of results reading columns left-to-right, and inside each column top-to-bottom. Represent blue circles as "P" and red circles as "B". Ignore all other marks (dots, lines, ties). Output only a single, flat JSON array of strings like ["B", "P", "P"]. Do not include any explanation or other text.`;
-                    
-                    const resultText = await callGeminiAPI(prompt, base64ImageData, file.type);
-                    const jsonMatch = resultText.match(/\[.*\]/s);
-                    if (!jsonMatch) throw new Error("AI không trả về dữ liệu hợp lệ.");
-                    
-                    const history = JSON.parse(jsonMatch[0]);
-                    if (!Array.isArray(history) || !history.every(item => item === 'P' || item === 'B')) {
-                        throw new Error("Dữ liệu từ AI không đúng định dạng P, B.");
-                    }
-                    createNewSession(history, file.name);
-                } catch (error) {
-                    console.error("AI Vision Import Error:", error);
-                    alert(`Lỗi khi phân tích ảnh "${file.name}": ${error.message}`);
-                }
+        function applySettings(settings) {
+            if (settings.minPatternLength) {
+                state.matcher.MIN_PATTERN_LENGTH = parseInt(settings.minPatternLength, 10);
             }
-
-            loadingOverlay.classList.add('hidden');
-            event.target.value = ''; // Reset file input
-            updateSessionSelector(); // Final update after all sessions are created
-            alert(`Hoàn tất! Đã nhập thành công ${files.length} phiên từ ảnh.`);
+            if (settings.maxPatternLength) {
+                state.matcher.MAX_PATTERN_LENGTH = parseInt(settings.maxPatternLength, 10);
+            }
+            if (settings.minCertainOccurrences) {
+                state.matcher.MIN_CERTAIN_OCCURRENCES = parseInt(settings.minCertainOccurrences, 10);
+            }
         }
 
-        function toBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result.split(',')[1]);
-                reader.onerror = error => reject(error);
-            });
-        }
-
-        async function callGeminiAPI(prompt, base64ImageData, mimeType) {
-            const apiKey = "AIzaSyCbw9bh5vtINmNdtkX_r5O7e0hw8wD3xKY"; 
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${apiKey}`;
-            const payload = {contents: [{parts: [{ text: prompt }, { inline_data: { mime_type: mimeType, data: base64ImageData } }]}]};
+        function loadSettings() {
+            const settingsStr = localStorage.getItem('baccaratSettings_v1');
+            const settings = settingsStr ? JSON.parse(settingsStr) : {};
             
-            // Retry logic
-            for (let i = 0; i < 3; i++) {
-                try {
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
+            applySettings(settings);
 
-                    if (!response.ok) {
-                         const errorBody = await response.json();
-                         throw new Error(`API Lỗi ${response.status}: ${errorBody.error?.message}`);
-                    }
-                    const result = await response.json();
-                    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (!text) throw new Error("Phản hồi từ AI không có nội dung.");
-                    return text;
-                } catch (e) {
-                    if (i === 2) throw e;
-                    await new Promise(res => setTimeout(res, 1000 * (i + 1))); // wait 1s, 2s
-                }
-            }
+            document.getElementById('minPatternLength').value = state.matcher.MIN_PATTERN_LENGTH;
+            document.getElementById('maxPatternLength').value = state.matcher.MAX_PATTERN_LENGTH;
+            document.getElementById('minCertainOccurrences').value = state.matcher.MIN_CERTAIN_OCCURRENCES;
         }
-        
-        function importData(event) { /* Unchanged */ }
-        function exportData() { /* Unchanged */ }
-        function saveSettings() { /* Unchanged */ }
-        function applySettings(settings) { /* Unchanged */ }
-        function loadSettings() { /* Unchanged */ }
-        
-        // --- INITIALIZATION ---
+
+        // --- IMPORT / EXPORT ---
+        function exportData() {
+            if (Object.keys(state.sessions).length === 0) {
+                alert("Không có dữ liệu để xuất.");
+                return;
+            }
+            const dataStr = JSON.stringify(state.sessions, null, 2);
+            const dataBlob = new Blob([dataStr], {type: "application/json"});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.download = `baccarat_backup_${new Date().toISOString().slice(0,10)}.json`;
+            link.href = url;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedSessions = JSON.parse(e.target.result);
+                    if (typeof importedSessions !== 'object' || importedSessions === null) throw new Error("Invalid format");
+                    
+                    for(const key in importedSessions) {
+                        const session = importedSessions[key];
+                        if(!session.name || !Array.isArray(session.history)) {
+                             throw new Error("Invalid session data");
+                        }
+                        // Add new fields if they don't exist in the imported file
+                        if (!session.predictions) session.predictions = [];
+                        if (!session.lengthPerformance) session.lengthPerformance = {};
+                        if (session.optimalLength === undefined) session.optimalLength = null;
+                    }
+
+                    if (confirm('Dữ liệu hiện tại sẽ bị ghi đè. Bạn có chắc muốn tiếp tục?')) {
+                        state.sessions = importedSessions;
+                        state.currentSessionId = null;
+                        localStorage.removeItem('lastActiveSession_v5');
+                        saveSessions();
+                        initializeApp();
+                        alert('Nhập dữ liệu thành công!');
+                    }
+                } catch (error) {
+                    alert('Lỗi: File dữ liệu không hợp lệ. Vui lòng kiểm tra lại file.');
+                    console.error("Import error:", error);
+                } finally {
+                    event.target.value = '';
+                }
+            };
+            reader.readAsText(file);
+        }
+
         function initializeApp() {
-            //loadSettings();
+            loadSettings();
             state.sessions = getSessions();
             
+            // Ensure all loaded sessions have the new properties
             Object.values(state.sessions).forEach(session => {
-                if (!session.predictions) session.predictions = [];
+                if (!session.lengthPerformance) session.lengthPerformance = {};
+                if (session.optimalLength === undefined) session.optimalLength = null;
+                // Important: Ensure predictions is an array
+                if (!Array.isArray(session.predictions)) session.predictions = [];
             });
 
-            const lastActiveId = localStorage.getItem('lastActiveSession_v7');
+            const lastActiveId = localStorage.getItem('lastActiveSession_v5');
+
             if (Object.keys(state.sessions).length === 0) {
-                createNewSession([], 'Phiên Mặc Định');
+                createNewSession();
             } else {
-                state.currentSessionId = (lastActiveId && state.sessions[lastActiveId]) ? lastActiveId : Object.keys(state.sessions)[0];
+                const sortedKeys = Object.keys(state.sessions).sort((a, b) => parseInt(b.split('-')[1]) - parseInt(a.split('-')[1]));
+                const idToLoad = (lastActiveId && state.sessions[lastActiveId]) ? lastActiveId : sortedKeys[0];
+                loadSession(idToLoad);
             }
-            updateSessionSelector();
-            updateAllUI();
         }
 
+        // --- INITIALIZATION ---
         document.addEventListener('DOMContentLoaded', initializeApp);
     </script>
 </body>
