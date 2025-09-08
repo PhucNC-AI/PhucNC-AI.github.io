@@ -434,6 +434,16 @@
              return { rate: (correct / total) * 100, correct, total }; 
          } 
 
+         function getConfidenceRangeString(confidence) {
+             if (confidence < 50) return "Dưới 50%";
+             if (confidence >= 50 && confidence < 60) return "50-60%";
+             if (confidence >= 60 && confidence < 70) return "60-70%";
+             if (confidence >= 70 && confidence < 80) return "70-80%";
+             if (confidence >= 80 && confidence < 90) return "80-90%";
+             if (confidence >= 90 && confidence <= 100) return "90-100%";
+             return "N/A";
+         }
+
          function calculateConfidenceStats(sessionPredictions) { 
              const ranges = [ 
                  {min: 50, max: 60}, {min: 60, max: 70},  
@@ -625,15 +635,18 @@
                              <p class="text-lg text-yellow-300 mb-2 animate-pulse">Đề Xuất Chắc Chắn (Lịch sử):</p> 
                              <p class="text-3xl font-extrabold text-yellow-300">${finalRecommendation}</p> 
                              <p class="text-4xl font-bold mt-2">${finalPrediction === 'P' ? '👤 PLAYER' : '🏦 BANKER'}</p> 
+                             <p class="text-sm text-yellow-200 mt-3">Độ tin cậy: <span class="font-bold text-white">100% (Tuyệt đối)</span></p>
                          </div> 
                      `; 
                      analysisCard.classList.add('card-glow-certain'); 
                  } else { 
+                     const confidenceRangeStr = getConfidenceRangeString(confidence);
                      predictionBlockHTML = ` 
                          <div class="text-center bg-gray-900 py-6 rounded-lg border-2 ${finalPrediction === 'P' ? 'border-blue-500' : 'border-red-500'}"> 
                              <p class="text-lg text-gray-400 mb-2">Đề xuất:</p> 
                              <p class="text-3xl font-extrabold ${finalPrediction === 'P' ? 'text-blue-400' : 'text-red-400'}">${finalRecommendation}</p> 
                              <p class="text-4xl font-bold mt-2">${finalPrediction === 'P' ? '👤 PLAYER' : '🏦 BANKER'}</p> 
+                             <p class="text-sm text-gray-400 mt-3">Độ tin cậy: <span class="font-bold text-white">${confidence.toFixed(1)}%</span> (Thuộc khoảng <span class="font-bold text-white">${confidenceRangeStr}</span>)</p>
                              ${recommendationNote} 
                          </div> 
                      `; 
@@ -1198,4 +1211,3 @@
      </script> 
  </body> 
  </html>
-
