@@ -97,8 +97,13 @@
                      <input type="file" id="fileInput" class="hidden" accept=".json" onchange="importData(event)"> 
                  </div> 
 
-                 <!-- Reliable Session Analysis (MOVED HERE) -->
-                 <div id="reliable-sessions-container" class="bg-gray-900/50 mt-6 p-4 rounded-xl shadow-inner border-2 border-transparent transition-all duration-500">
+                 <!-- Toggle Button for Reliable Sessions -->
+                 <div class="mt-4">
+                     <button onclick="toggleReliableSessions()" id="toggleReliableBtn" class="btn w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 px-4 rounded-lg">🔍 Hiện Các "Bàn Xịn"</button>
+                 </div>
+
+                 <!-- Reliable Session Analysis (MOVED HERE & HIDDEN) -->
+                 <div id="reliable-sessions-container" class="bg-gray-900/50 mt-6 p-4 rounded-xl shadow-inner border-2 border-transparent transition-all duration-500 hidden">
                      <h2 class="text-lg font-semibold mb-3 text-amber-300">💡 Các "Bàn Xịn" Đã Tìm Thấy</h2>
                      <div id="reliableSessionsResult" class="space-y-3">
                          <p class="text-gray-400 text-center py-2">Đang phân tích các phiên...</p>
@@ -984,6 +989,17 @@
                  initializeApp(); 
              } 
          } 
+
+         function toggleReliableSessions() {
+            const container = document.getElementById('reliable-sessions-container');
+            const button = document.getElementById('toggleReliableBtn');
+            container.classList.toggle('hidden');
+            if (container.classList.contains('hidden')) {
+                button.innerHTML = '🔍 Hiện Các "Bàn Xịn"';
+            } else {
+                button.innerHTML = '🙈 Ẩn Các "Bàn Xịn"';
+            }
+         }
 
          function loadSession(sessionId) { 
              if (state.sessions[sessionId]) { 
