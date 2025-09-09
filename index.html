@@ -74,6 +74,14 @@
              animation: last-prediction-glow 2s infinite ease-in-out;
              border: 2px solid #FBBF24; /* amber-400 */
          }
+         @keyframes current-prediction-glow {
+            0%, 100% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); border-color: rgba(59, 130, 246, 0.7); }
+            50% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.8); border-color: rgba(59, 130, 246, 1); }
+         }
+         .current-prediction-highlight {
+             animation: current-prediction-glow 2.5s infinite ease-in-out;
+             border: 2px solid #3B82F6; /* blue-500 */
+         }
      </style> 
  </head> 
  <body class="p-4 md:p-8"> 
@@ -253,7 +261,6 @@
                  this.MIN_HISTORY_FOR_ANALYSIS = 10; 
                  this.MIN_PATTERN_LENGTH = 10; 
                  this.MAX_PATTERN_LENGTH = 15; 
-                 this.MIN_CERTAIN_OCCURRENCES = 2; // Default value 
              } 
 
              calculateSimilarity(arr1, arr2) { 
@@ -335,15 +342,16 @@
                      const pattern = currentHistory.slice(-optimalLength); 
                      const result = this.getPredictionForPattern(pattern, allHistoricalSessions); 
                      if (result.prediction) { 
-                         const perf = lengthPerformance[optimalLength] || { wins: 0, total: 0 }; 
-                         const rate = perf.total > 0 ? (perf.wins / perf.total * 100).toFixed(1) : 'N/A'; 
-                         const analysisText = `Sử dụng chiều dài cầu tối ưu: ${optimalLength} ván.\n(Tỷ lệ thắng của chiều dài này: ${rate}% - ${perf.wins}/${perf.total})\n\nLịch sử cho thấy:\n- PLAYER: ${result.votes.P.toFixed(1)} điểm\n- BANKER: ${result.votes.B.toFixed(1)} điểm`; 
+                         const perf = lengthPerformance[optimalLength] || { wins: 0, total: 0 };
+                         const rate = perf.total > 0 ? (perf.wins / perf.total * 100).toFixed(1) : 'N/A';
+                         const analysisText = `Lịch sử cho thấy:\n- PLAYER: ${result.votes.P.toFixed(1)} điểm\n- BANKER: ${result.votes.B.toFixed(1)} điểm`; 
                          return {  
                              prediction: result.prediction,  
                              recommendation: 'THEO CHIỀU DÀI TỐI ƯU', 
                              analysisText,  
                              confidence: result.confidence, 
-                             isCertain: false 
+                             isCertain: false,
+                             performance: { rate, wins: perf.wins, total: perf.total }
                          }; 
                      } 
                  } 
@@ -386,7 +394,7 @@
                  else recommendation = `THEO PHÂN TÍCH LỊCH SỬ`; 
                   
                  const analysisText = `${analysisTextPrefix}\n\n🏆 Độ tin cậy: ${maxConfidence.toFixed(1)}%`; 
-                 return { prediction: predictedWinner, recommendation, analysisText, confidence: maxConfidence, isCertain: false }; 
+                 return { prediction: predictedWinner, recommendation, analysisText, confidence: maxConfidence, isCertain: false, performance: null }; 
              } 
          } 
 
@@ -546,7 +554,7 @@
              const allHistory = Object.values(state.sessions);
 
              const renderAnalysisColumn = (contentEl, analysis, optimalLength, mode) => {
-                const { prediction, recommendation, analysisText, confidence, isCertain } = analysis;
+                const { prediction, recommendation, analysisText, confidence, isCertain, performance } = analysis;
                 
                 let finalPrediction = prediction;
                 let finalRecommendation = recommendation;
@@ -571,10 +579,14 @@
                     }
                 }
 
-                let optimalLengthDisplay = optimalLength ? `<div class="mb-3 p-2 bg-gray-800 rounded-lg text-center text-cyan-300 text-xs"> 
-                     <span class="font-semibold">Độ dài cầu:</span> 
-                     <span class="font-bold ml-1">${optimalLength}</span> 
-                 </div>` : '';
+                let optimalLengthDisplay = '';
+                if (optimalLength) {
+                    const rateText = performance && performance.rate !== 'N/A' ? ` (Tỷ lệ: <b class="text-white">${performance.rate}%</b> - ${performance.wins}/${performance.total})` : '';
+                    optimalLengthDisplay = `<div class="mb-3 p-2 bg-gray-800 rounded-lg text-center text-cyan-300 text-xs"> 
+                         <span class="font-semibold">Độ dài cầu:</span> 
+                         <span class="font-bold ml-1">${optimalLength}</span>${rateText}
+                     </div>`;
+                }
 
                 if (finalPrediction) {
                     const confidenceRangeStr = getConfidenceRangeString(confidence);
@@ -597,6 +609,8 @@
                  lengthPerformance: session.lengthPerformance_dynamic
              });
              renderAnalysisColumn(document.getElementById('dynamic-analysis-content'), dynamicAnalysis, dynamicOptimalLength, 'dynamic');
+             session.nextPredictionConfidence_dynamic = dynamicAnalysis.confidence;
+
 
              // --- CONSERVATIVE MODE ANALYSIS ---
              const conservativeOptimalLength = session.optimalLength_conservative;
@@ -605,9 +619,10 @@
                  lengthPerformance: session.lengthPerformance_conservative
              });
              renderAnalysisColumn(document.getElementById('conservative-analysis-content'), conservativeAnalysis, conservativeOptimalLength, 'conservative');
+             session.nextPredictionConfidence_conservative = conservativeAnalysis.confidence;
          }
           
-         function updateConfidenceStatsUI(sessionPredictions, lastConfidence = null) { 
+         function updateConfidenceStatsUI(sessionPredictions, lastConfidence = null, currentConfidence = null) { 
              const tableDiv = document.getElementById('confidenceStatsTable'); 
              const recommendationDiv = document.getElementById('confidenceRecommendation'); 
              const session = state.sessions[state.currentSessionId];
@@ -651,10 +666,13 @@
                      
                      // Highlight only if the active tab matches the official mode
                      const isLastPredictionRange = lastConfidence !== null && lastConfidence >= range.min && (lastConfidence < range.max || (range.max === 100 && lastConfidence >= 100));
+                     const isCurrentPredictionRange = currentConfidence !== null && currentConfidence >= range.min && (currentConfidence < range.max || (range.max === 100 && currentConfidence >= 100));
 
                      let classList = ['grid', 'gap-x-2', 'items-center', 'p-3', 'rounded-lg', 'mt-2', 'transition-all', 'duration-300', 'text-sm'];
 
-                     if (isLastPredictionRange) {
+                     if(isCurrentPredictionRange) {
+                        classList.push('current-prediction-highlight');
+                     } else if (isLastPredictionRange) {
                         classList.push('last-prediction-highlight');
                      } else if (isBest) {
                         classList.push('bg-green-800', 'bg-opacity-40', 'border', 'border-green-500');
@@ -801,7 +819,8 @@
          function updateAllUI() { 
              updateBigRoadUI(); 
              updateGlobalAccuracyUI();
-             switchStatsTab(state.activeStatsTab); // This calls updateConfidenceStatsUI which calls updateAnalysisUI
+             updateAnalysisUI(); 
+             switchStatsTab(state.activeStatsTab); 
              updateCurrentSessionStatusUI(); 
              updateReliableSessionsUI(); 
          } 
@@ -913,10 +932,12 @@
                  session.lengthPerformance_dynamic = {};
                  session.optimalLength_dynamic = null;
                  session.lastPredictionConfidence_dynamic = null;
+                 session.nextPredictionConfidence_dynamic = null;
                  session.predictions_conservative = [];
                  session.lengthPerformance_conservative = {};
                  session.optimalLength_conservative = null;
                  session.lastPredictionConfidence_conservative = null;
+                 session.nextPredictionConfidence_conservative = null;
                  saveSessions(); 
                  updateAllUI(); 
              } 
@@ -1025,10 +1046,12 @@
                  lengthPerformance_dynamic: {},
                  optimalLength_dynamic: null,
                  lastPredictionConfidence_dynamic: null,
+                 nextPredictionConfidence_dynamic: null,
                  predictions_conservative: [],
                  lengthPerformance_conservative: {},
                  optimalLength_conservative: null,
                  lastPredictionConfidence_conservative: null,
+                 nextPredictionConfidence_conservative: null,
              }; 
              saveSessions(); 
              updateSessionSelector(); 
@@ -1073,7 +1096,7 @@
          }
 
          function deleteAllSessions() {
-            if (confirm('BẠN CÓ CHẮC MUỐN XÓA TẤT CẢ CÁC PHIÊN KHÔNG?\nHành động này không thể hoàn tác!')) {
+            if (confirm('BẠN CÓ CHẮC MUN XÓA TẤT CẢ CÁC PHIÊN KHÔNG?\nHành động này không thể hoàn tác!')) {
                 state.sessions = {};
                 state.currentSessionId = null;
                 localStorage.removeItem('baccaratPatternSessions_v4');
@@ -1169,8 +1192,8 @@
              
              const predictions = (mode === 'dynamic') ? currentSession.predictions_dynamic : currentSession.predictions_conservative;
              const lastConfidence = (mode === 'dynamic') ? currentSession.lastPredictionConfidence_dynamic : currentSession.lastPredictionConfidence_conservative;
-             updateConfidenceStatsUI(predictions, lastConfidence);
-             updateAnalysisUI();
+             const currentConfidence = (mode === 'dynamic') ? currentSession.nextPredictionConfidence_dynamic : currentSession.nextPredictionConfidence_conservative;
+             updateConfidenceStatsUI(predictions, lastConfidence, currentConfidence);
          }
 
          function getTemporaryPredictions(session, mode) {
@@ -1359,11 +1382,13 @@
                  if (!session.lengthPerformance_dynamic) session.lengthPerformance_dynamic = {};
                  if (session.optimalLength_dynamic === undefined) session.optimalLength_dynamic = null;
                  if (session.lastPredictionConfidence_dynamic === undefined) session.lastPredictionConfidence_dynamic = null;
+                 if (session.nextPredictionConfidence_dynamic === undefined) session.nextPredictionConfidence_dynamic = null;
                  
                  if (!session.predictions_conservative) session.predictions_conservative = [];
                  if (!session.lengthPerformance_conservative) session.lengthPerformance_conservative = {};
                  if (session.optimalLength_conservative === undefined) session.optimalLength_conservative = null;
                  if (session.lastPredictionConfidence_conservative === undefined) session.lastPredictionConfidence_conservative = null;
+                 if (session.nextPredictionConfidence_conservative === undefined) session.nextPredictionConfidence_conservative = null;
 
                  // Deprecated cleanup
                  delete session.predictions;
