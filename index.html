@@ -160,21 +160,16 @@
               
              <!-- Analysis Settings --> 
              <div class="bg-gray-800 p-6 rounded-2xl shadow-lg"> 
-                 <h2 class="text-xl font-semibold mb-4 text-purple-300">⚙️ Cài Đặt Phân Tích (Thủ công)</h2> 
-                 <p class="text-sm text-gray-400 mb-4">Cài đặt này chỉ được sử dụng khi hệ thống chưa tìm thấy chiều dài cầu tối ưu.</p> 
+                 <h2 class="text-xl font-semibold mb-4 text-purple-300">⚙️ Cài Đặt Phân Tích</h2> 
                  <div class="space-y-4"> 
-                     <div> 
-                         <label for="minPatternLength" class="block text-sm font-medium text-gray-300 mb-1">Độ dài cầu tối thiểu để so sánh</label> 
-                         <input type="number" id="minPatternLength" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:outline-none"> 
-                     </div> 
-                     <div> 
-                         <label for="maxPatternLength" class="block text-sm font-medium text-gray-300 mb-1">Độ dài cầu tối đa để so sánh</label> 
-                         <input type="number" id="maxPatternLength" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:outline-none"> 
-                     </div> 
-                     <div> 
-                         <label for="minCertainOccurrences" class="block text-sm font-medium text-gray-300 mb-1">Số lần lặp lại tối thiểu cho "Tay Chắc Chắn"</label> 
-                         <input type="number" id="minCertainOccurrences" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:outline-none"> 
-                     </div> 
+                      <div>
+                         <label for="optimalLengthMode" class="block text-sm font-medium text-gray-300 mb-1">Chế độ cập nhật Chiều Dài Cầu</label>
+                         <select id="optimalLengthMode" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                             <option value="dynamic">Luôn tìm chiều dài tốt nhất</option>
+                             <option value="conservative">Chỉ đổi chiều dài khi thua</option>
+                         </select>
+                         <p class="text-xs text-gray-500 mt-1">"Luôn tìm": Tự động chọn chiều dài có tỷ lệ thắng cao nhất. "Chỉ đổi khi thua": Giữ nguyên chiều dài hiện tại cho đến khi nó dự đoán sai.</p>
+                     </div>
                  </div> 
                  <button onclick="saveSettings()" class="btn w-full mt-6 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-4 rounded-lg">Lưu Cài Đặt</button> 
              </div> 
@@ -454,7 +449,10 @@
              matcher: new PatternMatcher(), 
              currentPrediction: null, 
              goldenRange: null,
-             selectionModeActive: false
+             selectionModeActive: false,
+             settings: {
+                optimalLengthMode: 'dynamic' // 'dynamic' or 'conservative'
+             }
          }; 
          let lastCheckedCheckbox = null; // For shift-click selection
           
@@ -684,7 +682,7 @@
                      `; 
                      analysisCard.classList.add(finalPrediction === 'P' ? 'card-glow-p' : 'card-glow-b'); 
                  } 
-
+ 
                  analysisResultDiv.innerHTML = ` 
                      ${optimalLengthDisplay} 
                      <div class="bg-gray-700 p-4 rounded-lg"> 
@@ -692,7 +690,7 @@
                      </div> 
                      ${predictionBlockHTML} 
                  `; 
-
+ 
              } else { 
                  analysisResultDiv.innerHTML = ` 
                      ${optimalLengthDisplay} 
@@ -710,7 +708,7 @@
               
              let bestRange = null; 
              let maxRate = -1; 
-
+ 
              ranges.forEach(range => { 
                   if (range.total >= 3 && range.rate > maxRate) { 
                       maxRate = range.rate; 
@@ -719,19 +717,20 @@
              }); 
               
              state.goldenRange = bestRange;  
-
+ 
              if (bestRange) { 
                  recommendationDiv.innerHTML = `<p class="text-sm text-yellow-300"><span class="font-bold">✨ Khoảng Vàng (Phiên):</span> Tỷ lệ thắng cao nhất là <b class="text-green-400">${maxRate.toFixed(1)}%</b> trong khoảng <b class="text-white">${bestRange.min}%-${bestRange.max}%</b>.</p>`; 
              } else { 
                  recommendationDiv.innerHTML = `<p class="text-sm text-gray-400">Chưa đủ dữ liệu để tìm ra khoảng vàng cho phiên này (cần tối thiểu 3 phán đoán trong 1 khoảng).</p>`; 
              } 
-
+ 
              let html = ` 
-                 <div class="grid gap-x-2 text-xs font-semibold text-gray-400 px-3" style="grid-template-columns: 4fr 2fr 2fr 4fr;"> 
+                 <div class="grid gap-x-2 text-xs font-semibold text-gray-400 px-3" style="grid-template-columns: 3fr 2fr 2fr 3fr 5fr;"> 
                      <span class="text-left">Khoảng</span> 
                      <span class="text-center">Tổng</span> 
                      <span class="text-center">Thắng</span> 
                      <span class="text-right">Tỷ Lệ</span> 
+                     <span class="text-left pl-1">Chuỗi Gần Đây</span>
                  </div> 
              `; 
              if (sessionPredictions.length === 0) { 
@@ -740,16 +739,37 @@
                   ranges.forEach(range => { 
                      const rate = range.rate; 
                      const isBest = range === bestRange; 
-                     const highlightClass = isBest ? 'bg-green-800 bg-opacity-40 border border-green-500' : 'bg-gray-700 bg-opacity-50'; 
+                     const highlightClass = isBest ? 'bg-green-800 bg-opacity-40 border border-green-500' : 'bg-gray-700 bg-opacity-50';
+                     
+                     // Chart Generation Logic
+                     const predictionsForRange = sessionPredictions.filter(p => {
+                         const confidence = p.confidence;
+                         return confidence >= range.min && (confidence < range.max || (range.max === 100 && confidence >= 100));
+                     });
+                     const recentPredictions = predictionsForRange.slice(-12); // Get last 12
+                     let chartHTML = '';
+                     if (recentPredictions.length > 0) {
+                         recentPredictions.forEach(p => {
+                             const isWin = p.predicted === p.actual;
+                             const barColor = isWin ? 'bg-blue-500' : 'bg-red-600';
+                             const barHeight = isWin ? 'h-5' : 'h-2';
+                             const tooltip = `Dự đoán: ${p.predicted}, Thực tế: ${p.actual}, Độ tin cậy: ${p.confidence.toFixed(0)}%`;
+                             chartHTML += `<div class="${barColor} ${barHeight} w-1.5 rounded-full" title="${tooltip}"></div>`;
+                         });
+                     }
+
                      html += ` 
-                         <div class="grid gap-x-2 items-center ${highlightClass} p-3 rounded-lg mt-2 transition-all duration-300 text-sm" style="grid-template-columns: 4fr 2fr 2fr 4fr;"> 
+                         <div class="grid gap-x-2 items-center ${highlightClass} p-3 rounded-lg mt-2 transition-all duration-300 text-sm" style="grid-template-columns: 3fr 2fr 2fr 3fr 5fr;"> 
                              <span class="font-medium text-gray-300 text-left">${range.min}%-${range.max}%</span> 
                              <span class="text-white font-semibold text-center">${range.total}</span> 
                              <span class="text-green-400 font-semibold text-center">${range.wins}</span> 
                              <span class="font-bold flex items-center justify-end ${rate >= 70 ? 'text-green-400' : (rate >= 50 ? 'text-yellow-400' : 'text-red-400')}"> 
                                  ${rate > -1 ? rate.toFixed(1) + '%' : '-'} 
                                  ${range.trendIndicator} 
-                             </span> 
+                             </span>
+                             <div class="flex items-end justify-start gap-1 h-6 pl-1">
+                                 ${chartHTML || '<span class="text-xs text-gray-600">...</span>'}
+                             </div>
                          </div> 
                      `; 
                  }); 
@@ -873,8 +893,36 @@
              const historyBeforeAdd = [...session.history]; 
              const allSessions = Object.values(state.sessions); 
 
-             const newOptimalLength = updateLengthPerformanceAndFindOptimal(historyBeforeAdd, allSessions, result, session); 
-             session.optimalLength = newOptimalLength; 
+             // Determine if the last prediction was correct
+             const wasPredictionCorrect = state.currentPrediction && state.currentPrediction.prediction === result;
+             const currentOptimalLength = session.optimalLength;
+
+             // --- NEW LOGIC FOR OPTIMAL LENGTH ---
+             if (state.settings.optimalLengthMode === 'conservative' && wasPredictionCorrect && currentOptimalLength) {
+                 // CONSERVATIVE MODE & CORRECT PREDICTION:
+                 // The optimal length does not change. We only update its performance stats.
+                 const pattern = historyBeforeAdd.slice(-currentOptimalLength);
+                 const { prediction } = state.matcher.getPredictionForPattern(pattern, allSessions);
+                 
+                 if (prediction) {
+                     if (!session.lengthPerformance[currentOptimalLength]) {
+                         session.lengthPerformance[currentOptimalLength] = { wins: 0, total: 0 };
+                     }
+                     const stats = session.lengthPerformance[currentOptimalLength];
+                     stats.total++;
+                     if (prediction === result) {
+                         stats.wins++;
+                     }
+                 }
+                 // session.optimalLength remains the same.
+
+             } else {
+                 // DYNAMIC MODE (always search) OR CONSERVATIVE MODE ON A LOSS (or if no length is set yet)
+                 // Run the full search for the best length.
+                 const newOptimalLength = updateLengthPerformanceAndFindOptimal(historyBeforeAdd, allSessions, result, session);
+                 session.optimalLength = newOptimalLength;
+             }
+             // --- END NEW LOGIC ---
 
              if (state.currentPrediction && state.currentPrediction.prediction) { 
                  session.predictions.push({  
@@ -1207,9 +1255,7 @@
          // --- SETTINGS --- 
          function saveSettings() { 
              const settings = { 
-                 minPatternLength: document.getElementById('minPatternLength').value, 
-                 maxPatternLength: document.getElementById('maxPatternLength').value, 
-                 minCertainOccurrences: document.getElementById('minCertainOccurrences').value 
+                 optimalLengthMode: document.getElementById('optimalLengthMode').value
              }; 
              localStorage.setItem('baccaratSettings_v1', JSON.stringify(settings)); 
              applySettings(settings); 
@@ -1218,26 +1264,23 @@
          } 
 
          function applySettings(settings) { 
-             if (settings.minPatternLength) { 
-                 state.matcher.MIN_PATTERN_LENGTH = parseInt(settings.minPatternLength, 10); 
-             } 
-             if (settings.maxPatternLength) { 
-                 state.matcher.MAX_PATTERN_LENGTH = parseInt(settings.maxPatternLength, 10); 
-             } 
-             if (settings.minCertainOccurrences) { 
-                 state.matcher.MIN_CERTAIN_OCCURRENCES = parseInt(settings.minCertainOccurrences, 10); 
-             } 
+             if (settings.optimalLengthMode) {
+                state.settings.optimalLengthMode = settings.optimalLengthMode;
+             }
          } 
 
          function loadSettings() { 
              const settingsStr = localStorage.getItem('baccaratSettings_v1'); 
              const settings = settingsStr ? JSON.parse(settingsStr) : {}; 
-              
-             applySettings(settings); 
 
-             document.getElementById('minPatternLength').value = state.matcher.MIN_PATTERN_LENGTH; 
-             document.getElementById('maxPatternLength').value = state.matcher.MAX_PATTERN_LENGTH; 
-             document.getElementById('minCertainOccurrences').value = state.matcher.MIN_CERTAIN_OCCURRENCES; 
+             const finalSettings = {
+                optimalLengthMode: 'dynamic', // Default value
+                ...settings
+             };
+              
+             applySettings(finalSettings); 
+
+             document.getElementById('optimalLengthMode').value = state.settings.optimalLengthMode;
          } 
 
          // --- IMPORT / EXPORT --- 
@@ -1391,8 +1434,6 @@
      </script> 
  </body> 
  </html>
-
-
 
 
 
