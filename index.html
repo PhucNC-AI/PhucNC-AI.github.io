@@ -197,40 +197,18 @@
 
          <!-- Right Column: Analysis & Stats --> 
          <div class="space-y-6"> 
-              <!-- Accuracy Stats --> 
-             <div class="bg-gray-800 p-6 rounded-2xl shadow-lg"> 
-                 <h2 class="text-xl font-semibold mb-4 text-green-300">🎯 Thống Kê (Phiên Hiện Tại)</h2> 
-                 <div class="space-y-4"> 
-                     <div class="flex justify-between items-center bg-gray-700 p-4 rounded-lg"> 
-                         <span class="font-medium text-gray-300">Tỷ Lệ Thắng</span> 
-                         <span id="accuracyRate" class="text-2xl font-bold text-green-400">0.0%</span> 
-                     </div> 
-                     <div class="flex justify-between items-center bg-gray-700 p-4 rounded-lg"> 
-                         <span class="font-medium text-gray-300">Thắng / Tổng Phán Đoán</span> 
-                         <div> 
-                             <span id="correctPredictions" class="text-lg font-semibold text-white">0</span> 
-                             <span class="text-gray-400">/</span> 
-                             <span id="totalPredictions" class="text-lg font-semibold text-white">0</span> 
-                         </div> 
-                     </div> 
-                 </div> 
-             </div> 
              
              <!-- Global Accuracy Stats --> 
              <div class="bg-gray-800 p-6 rounded-2xl shadow-lg"> 
                  <h2 class="text-xl font-semibold mb-4 text-cyan-300">🌐 Thống Kê (Toàn Cục)</h2> 
                  <div class="space-y-4"> 
                      <div class="flex justify-between items-center bg-gray-700 p-4 rounded-lg"> 
-                         <span class="font-medium text-gray-300">Tỷ Lệ Thắng</span> 
-                         <span id="globalAccuracyRate" class="text-2xl font-bold text-cyan-400">0.0%</span> 
+                         <span class="font-medium text-gray-300">Tỷ Lệ Thắng (Chế độ "Luôn Tìm")</span> 
+                         <span id="globalAccuracyRate_dynamic" class="text-2xl font-bold text-cyan-400">0.0% (0/0)</span> 
                      </div> 
                      <div class="flex justify-between items-center bg-gray-700 p-4 rounded-lg"> 
-                         <span class="font-medium text-gray-300">Thắng / Tổng Phán Đoán</span> 
-                         <div> 
-                             <span id="globalCorrectPredictions" class="text-lg font-semibold text-white">0</span> 
-                             <span class="text-gray-400">/</span> 
-                             <span id="globalTotalPredictions" class="text-lg font-semibold text-white">0</span> 
-                         </div> 
+                         <span class="font-medium text-gray-300">Tỷ Lệ Thắng (Chế độ "Bảo Toàn")</span> 
+                         <span id="globalAccuracyRate_conservative" class="text-2xl font-bold text-amber-400">0.0% (0/0)</span> 
                      </div> 
                  </div> 
              </div> 
@@ -257,22 +235,6 @@
                  </div> 
              </div> 
               
-             <!-- Analysis Settings --> 
-             <div class="bg-gray-800 p-6 rounded-2xl shadow-lg"> 
-                 <h2 class="text-xl font-semibold mb-4 text-purple-300">⚙️ Cài Đặt Thống Kê</h2> 
-                 <div class="space-y-4"> 
-                      <div>
-                         <label for="optimalLengthMode" class="block text-sm font-medium text-gray-300 mb-1">Chế độ ghi nhận Thống Kê & Tỷ Lệ Thắng</label>
-                         <select id="optimalLengthMode" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
-                             <option value="dynamic">Luôn tìm chiều dài tốt nhất</option>
-                             <option value="conservative">Chỉ đổi chiều dài khi thua</option>
-                         </select>
-                         <p class="text-xs text-gray-500 mt-1">Lựa chọn này quyết định cách hệ thống tính toán Tỷ Lệ Thắng và các bảng thống kê. Bảng "Phân Tích Song Song" ở trên sẽ luôn hiển thị dự đoán cho cả hai chế độ.</p>
-                     </div>
-                 </div> 
-                 <button onclick="saveSettings()" class="btn w-full mt-6 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-4 rounded-lg">Lưu & Tính Toán Lại (Nếu Đổi)</button> 
-             </div> 
-
          </div> 
      </div> 
  
@@ -436,7 +398,7 @@
                  } 
 
                  if (allMatches.length === 0) { 
-                     return { prediction: null, analysisText: 'Không tìm thấy hình cầu tương tự (chế độ thủ công).', confidence: 0, isCertain: false }; 
+                     return { prediction: null, analysisText: 'Không tìm thấy hình cầu tương tự.', confidence: 0, isCertain: false }; 
                  } 
 
                  const votes = { P: 0, B: 0 }; 
@@ -446,7 +408,7 @@
 
                  const totalVotes = votes.P + votes.B; 
                  if (totalVotes === 0) { 
-                     return { prediction: null, analysisText: 'Không tìm thấy hình cầu tương tự (chế độ thủ công).', confidence: 0, isCertain: false }; 
+                     return { prediction: null, analysisText: 'Không tìm thấy hình cầu tương tự.', confidence: 0, isCertain: false }; 
                  } 
 
                  const confidenceP = (votes.P / totalVotes) * 100; 
@@ -472,18 +434,15 @@
              currentSessionId: null, 
              sessions: {}, 
              matcher: new PatternMatcher(), 
-             currentPrediction: null, 
              goldenRange: {}, // Now an object: { dynamic: null, conservative: null }
              selectionModeActive: false,
              activeStatsTab: 'dynamic',
-             settings: {
-                optimalLengthMode: 'dynamic' // 'dynamic' or 'conservative'
-             }
          }; 
          let lastCheckedCheckbox = null; // For shift-click selection
           
          // --- STATS CALCULATION --- 
          function getPredictionStats(predictions) { 
+             if (!predictions) return { rate: 0, correct: 0, total: 0 };
              const total = predictions.length; 
              if (total === 0) return { rate: 0, correct: 0, total: 0 }; 
              const correct = predictions.filter(p => p.predicted === p.actual).length; 
@@ -602,38 +561,20 @@
              roadDiv.scrollLeft = roadDiv.scrollWidth; 
          } 
 
-         function updateAccuracyUI() { 
-             const predictions = state.sessions[state.currentSessionId]?.predictions || []; 
-             const stats = getPredictionStats(predictions); 
-             const accuracyRateEl = document.getElementById('accuracyRate');
-             const correctPredictionsEl = document.getElementById('correctPredictions');
-             const totalPredictionsEl = document.getElementById('totalPredictions');
-             if (accuracyRateEl) {
-                 accuracyRateEl.textContent = `${stats.rate.toFixed(1)}%`;
-             }
-             if (correctPredictionsEl) {
-                 correctPredictionsEl.textContent = stats.correct;
-             }
-             if (totalPredictionsEl) {
-                 totalPredictionsEl.textContent = stats.total;
-             }
+         function updateAccuracyUI() {
+            // This function is now removed as it's ambiguous. Global stats are used instead.
          } 
 
          function updateGlobalAccuracyUI() { 
-             const allPredictions = Object.values(state.sessions).flatMap(s => s.predictions || []); 
-             const stats = getPredictionStats(allPredictions); 
-             const globalAccuracyRateEl = document.getElementById('globalAccuracyRate');
-             const globalCorrectPredictionsEl = document.getElementById('globalCorrectPredictions');
-             const globalTotalPredictionsEl = document.getElementById('globalTotalPredictions');
-             if (globalAccuracyRateEl) {
-                globalAccuracyRateEl.textContent = `${stats.rate.toFixed(1)}%`; 
-             }
-             if (globalCorrectPredictionsEl) {
-                globalCorrectPredictionsEl.textContent = stats.correct; 
-             }
-             if (globalTotalPredictionsEl) {
-                globalTotalPredictionsEl.textContent = stats.total; 
-             }
+             const allDynamicPredictions = Object.values(state.sessions).flatMap(s => s.predictions_dynamic || []); 
+             const dynamicStats = getPredictionStats(allDynamicPredictions); 
+             const dynamicRateEl = document.getElementById('globalAccuracyRate_dynamic');
+             if (dynamicRateEl) dynamicRateEl.textContent = `${dynamicStats.rate.toFixed(1)}% (${dynamicStats.correct}/${dynamicStats.total})`;
+             
+             const allConservativePredictions = Object.values(state.sessions).flatMap(s => s.predictions_conservative || []); 
+             const conservativeStats = getPredictionStats(allConservativePredictions); 
+             const conservativeRateEl = document.getElementById('globalAccuracyRate_conservative');
+             if (conservativeRateEl) conservativeRateEl.textContent = `${conservativeStats.rate.toFixed(1)}% (${conservativeStats.correct}/${conservativeStats.total})`;
          } 
 
          function updateAnalysisUI() {
@@ -715,34 +656,26 @@
              };
 
              // --- DYNAMIC MODE ANALYSIS ---
-             const dynamicOptimalLength = findBestPerformingLength(session.lengthPerformance);
+             const dynamicOptimalLength = findBestPerformingLength(session.lengthPerformance_dynamic);
              const dynamicAnalysis = state.matcher.getPrediction(currentHistory, allHistory, {
                  optimalLength: dynamicOptimalLength,
-                 lengthPerformance: session.lengthPerformance
+                 lengthPerformance: session.lengthPerformance_dynamic
              });
              renderAnalysisColumn(document.getElementById('dynamic-analysis-content'), dynamicAnalysis, dynamicOptimalLength, 'dynamic');
 
              // --- CONSERVATIVE MODE ANALYSIS ---
-             const lastPrediction = session.predictions.length > 0 ? session.predictions[session.predictions.length - 1] : null;
-             const wasLastPredictionCorrect = lastPrediction && lastPrediction.predicted === lastPrediction.actual;
              let conservativeOptimalLength;
-             if (wasLastPredictionCorrect && session.optimalLength) {
-                 conservativeOptimalLength = session.optimalLength;
+             const lastPredictionConservative = session.predictions_conservative[session.predictions_conservative.length - 1];
+             if (lastPredictionConservative && lastPredictionConservative.predicted === lastPredictionConservative.actual && session.optimalLength_conservative) {
+                 conservativeOptimalLength = session.optimalLength_conservative;
              } else {
-                 conservativeOptimalLength = findBestPerformingLength(session.lengthPerformance);
+                 conservativeOptimalLength = findBestPerformingLength(session.lengthPerformance_conservative);
              }
              const conservativeAnalysis = state.matcher.getPrediction(currentHistory, allHistory, {
                  optimalLength: conservativeOptimalLength,
-                 lengthPerformance: session.lengthPerformance
+                 lengthPerformance: session.lengthPerformance_conservative
              });
              renderAnalysisColumn(document.getElementById('conservative-analysis-content'), conservativeAnalysis, conservativeOptimalLength, 'conservative');
-             
-             // --- STORE OFFICIAL PREDICTION FOR STATS ---
-             if (state.settings.optimalLengthMode === 'dynamic') {
-                 state.currentPrediction = { prediction: dynamicAnalysis.prediction, confidence: dynamicAnalysis.confidence };
-             } else {
-                 state.currentPrediction = { prediction: conservativeAnalysis.prediction, confidence: conservativeAnalysis.confidence };
-             }
          }
           
          function updateConfidenceStatsUI(sessionPredictions, lastConfidence = null) { 
@@ -788,7 +721,7 @@
                      const isBest = range === bestRange; 
                      
                      // Highlight only if the active tab matches the official mode
-                     const isLastPredictionRange = state.activeStatsTab === state.settings.optimalLengthMode && lastConfidence !== null && lastConfidence >= range.min && (lastConfidence < range.max || (range.max === 100 && lastConfidence >= 100));
+                     const isLastPredictionRange = lastConfidence !== null && lastConfidence >= range.min && (lastConfidence < range.max || (range.max === 100 && lastConfidence >= 100));
 
                      let classList = ['grid', 'gap-x-2', 'items-center', 'p-3', 'rounded-lg', 'mt-2', 'transition-all', 'duration-300', 'text-sm'];
 
@@ -837,10 +770,11 @@
          } 
          
          function getSessionReliability(sessionId) {
-            if (!state.sessions[sessionId]) return null;
-
+            // This function is now ambiguous, so we base it on the active tab for display purposes
             const session = state.sessions[sessionId];
-            const predictions = session.predictions || [];
+            if (!session) return null;
+            
+            const predictions = getTemporaryPredictions(session, state.activeStatsTab);
             if (predictions.length < 7) return null;
 
             const confidenceStats = calculateConfidenceStats(predictions);
@@ -855,7 +789,6 @@
             return null;
          }
 
-         // --- NEW: CURRENT SESSION STATUS UI ---
          function updateCurrentSessionStatusUI() {
              const statusDiv = document.getElementById('currentSessionStatus');
              const analysisCard = document.getElementById('analysis-card');
@@ -886,8 +819,9 @@
                  const reliability = getSessionReliability(sessionId);
 
                  if (reliability) {
+                     const predictions = getTemporaryPredictions(session, state.activeStatsTab);
+                     const confidenceStats = calculateConfidenceStats(predictions);
                      let detailedReason = '';
-                     const confidenceStats = calculateConfidenceStats(session.predictions || []);
                      for (const range of confidenceStats) {
                          if ((reliability.type === 'win' && range.rate > 70 && range.total >= 7 && range.streakType === 'win') || 
                              (reliability.type === 'loss' && range.rate < 30 && range.total >= 10 && range.streakType === 'loss')) {
@@ -937,11 +871,9 @@
 
          function updateAllUI() { 
              updateBigRoadUI(); 
-             updateAccuracyUI(); 
-             updateGlobalAccuracyUI(); 
-             switchStatsTab(state.activeStatsTab); // This calls updateConfidenceStatsUI
+             updateGlobalAccuracyUI();
+             switchStatsTab(state.activeStatsTab); // This calls updateConfidenceStatsUI which calls updateAnalysisUI
              updateCurrentSessionStatusUI(); 
-             updateAnalysisUI(); 
              updateReliableSessionsUI(); 
          } 
 
@@ -951,119 +883,91 @@
              const session = state.sessions[state.currentSessionId]; 
              const historyBeforeAdd = [...session.history]; 
              const allSessions = Object.values(state.sessions); 
-
-             // Determine if the last prediction was correct
-             const wasPredictionCorrect = state.currentPrediction && state.currentPrediction.prediction === result;
-             const currentOptimalLength = session.optimalLength;
-
-             // --- NEW LOGIC FOR OPTIMAL LENGTH ---
-             if (state.settings.optimalLengthMode === 'conservative' && wasPredictionCorrect && currentOptimalLength) {
-                 // CONSERVATIVE MODE & CORRECT PREDICTION:
-                 // The optimal length does not change. We only update its performance stats.
-                 const pattern = historyBeforeAdd.slice(-currentOptimalLength);
-                 const { prediction } = state.matcher.getPredictionForPattern(pattern, allSessions);
-                 
-                 if (prediction) {
-                     if (!session.lengthPerformance[currentOptimalLength]) {
-                         session.lengthPerformance[currentOptimalLength] = { wins: 0, total: 0 };
-                     }
-                     const stats = session.lengthPerformance[currentOptimalLength];
-                     stats.total++;
-                     if (prediction === result) {
-                         stats.wins++;
-                     }
-                 }
-                 // session.optimalLength remains the same.
-
-             } else {
-                 // DYNAMIC MODE (always search) OR CONSERVATIVE MODE ON A LOSS (or if no length is set yet)
-                 // Run the full search for the best length.
-                 const newOptimalLength = updateLengthPerformanceAndFindOptimal(historyBeforeAdd, allSessions, result, session);
-                 session.optimalLength = newOptimalLength;
+             
+             // --- DYNAMIC MODE PREDICTION & UPDATE ---
+             const dynamicAnalysis = state.matcher.getPrediction(historyBeforeAdd, allSessions, { 
+                 optimalLength: findBestPerformingLength(session.lengthPerformance_dynamic), 
+                 lengthPerformance: session.lengthPerformance_dynamic 
+             });
+             updatePerformanceForAllLengths(historyBeforeAdd, allSessions, result, session.lengthPerformance_dynamic);
+             if(dynamicAnalysis.prediction) {
+                 session.predictions_dynamic.push({ predicted: dynamicAnalysis.prediction, actual: result, confidence: dynamicAnalysis.confidence });
+                 session.lastPredictionConfidence_dynamic = dynamicAnalysis.confidence;
              }
-             // --- END NEW LOGIC ---
 
-             if (state.currentPrediction && state.currentPrediction.prediction) { 
-                 session.predictions.push({  
-                     predicted: state.currentPrediction.prediction,  
-                     actual: result, 
-                     confidence: state.currentPrediction.confidence 
-                 });
-                 session.lastPredictionConfidence = state.currentPrediction.confidence;
+             // --- CONSERVATIVE MODE PREDICTION & UPDATE ---
+             let conservativeOptimalLength;
+             const lastConservativePrediction = session.predictions_conservative.length > 0 ? session.predictions_conservative[session.predictions_conservative.length - 1] : null;
+             // Important: Check against the result of the PREVIOUS hand
+             const wasConservativeCorrect = lastConservativePrediction && session.history.length > 0 && lastConservativePrediction.predicted === session.history[session.history.length-1];
+
+             if(wasConservativeCorrect && session.optimalLength_conservative) {
+                 conservativeOptimalLength = session.optimalLength_conservative;
              } else {
-                 session.lastPredictionConfidence = null;
+                 conservativeOptimalLength = findBestPerformingLength(session.lengthPerformance_conservative);
              }
-             state.currentPrediction = null;  
+             const conservativeAnalysis = state.matcher.getPrediction(historyBeforeAdd, allSessions, { 
+                 optimalLength: conservativeOptimalLength, 
+                 lengthPerformance: session.lengthPerformance_conservative
+             });
+             updatePerformanceForAllLengths(historyBeforeAdd, allSessions, result, session.lengthPerformance_conservative);
+             if(conservativeAnalysis.prediction) {
+                 session.predictions_conservative.push({ predicted: conservativeAnalysis.prediction, actual: result, confidence: conservativeAnalysis.confidence });
+                 session.lastPredictionConfidence_conservative = conservativeAnalysis.confidence;
+             }
+             session.optimalLength_conservative = conservativeOptimalLength;
+
 
              session.history.push(result); 
-              
              saveSessions(); 
              updateAllUI(); 
          } 
+         
+         function updatePerformanceForAllLengths(history, allSessions, newResult, performanceObject) {
+            for (let len = 10; len <= 20; len++) {
+                if (history.length < len) continue;
+                const pattern = history.slice(-len);
+                const { prediction } = state.matcher.getPredictionForPattern(pattern, allSessions);
+                if (prediction) {
+                    if (!performanceObject[len]) performanceObject[len] = { wins: 0, total: 0 };
+                    const stats = performanceObject[len];
+                    stats.total++;
+                    if (prediction === newResult) stats.wins++;
+                }
+            }
+         }
 
-         function updateLengthPerformanceAndFindOptimal(history, allSessions, newResult, targetSession) { 
-             const session = targetSession;
-             if (!session.lengthPerformance) { 
-                 session.lengthPerformance = {}; 
-             } 
-
-             const candidates = []; 
-
-             for (let len = 10; len <= 20; len++) { 
-                 if (history.length < len) continue; 
-
-                 const pattern = history.slice(-len); 
-                 const { prediction } = state.matcher.getPredictionForPattern(pattern, allSessions); 
-
-                 if (prediction) { 
-                     if (!session.lengthPerformance[len]) { 
-                         session.lengthPerformance[len] = { wins: 0, total: 0 }; 
-                     } 
-                      
-                     const stats = session.lengthPerformance[len]; 
-                     stats.total++; 
-                     if (prediction === newResult) { 
-                         stats.wins++; 
-                     } 
-                      
-                     if (prediction === newResult) { 
-                         candidates.push({ 
-                             length: len, 
-                             rate: stats.wins / stats.total, 
-                             total: stats.total 
-                         }); 
-                     } 
-                 } 
-             } 
-              
-             if (candidates.length === 0) { 
-                 return session.optimalLength; 
-             } 
-
-             candidates.sort((a, b) => { 
-                 if (b.rate !== a.rate) { 
-                     return b.rate - a.rate; 
-                 } 
-                 return b.total - a.total; 
-             }); 
-              
-             return candidates[0].length; 
-         } 
+         function findBestPerformingLength(lp) {
+            if (!lp || Object.keys(lp).length === 0) return null;
+            const candidates = Object.entries(lp)
+                .filter(([, stats]) => stats.total > 0)
+                .map(([len, stats]) => ({
+                    length: parseInt(len),
+                    rate: stats.wins / stats.total,
+                    total: stats.total
+                }));
+            if (candidates.length === 0) return null;
+            candidates.sort((a, b) => {
+                if (b.rate !== a.rate) return b.rate - a.rate;
+                return b.total - a.total;
+            });
+            return candidates[0].length;
+        };
 
          function undoLast() { 
              if (!state.currentSessionId || state.sessions[state.currentSessionId].history.length === 0) return; 
              const session = state.sessions[state.currentSessionId];
              session.history.pop(); 
               
-             const predictions = session.predictions; 
-             if (predictions.length > 0) { 
-                 predictions.pop(); 
-             } 
-             
-             session.lastPredictionConfidence = null;
-              
-             saveSessions(); 
-             updateAllUI(); 
+             // A full reprocess is the only 100% accurate way to handle the complex state.
+             if (confirm("Hoàn tác sẽ yêu cầu tính toán lại toàn bộ phiên để đảm bảo chính xác. Tiếp tục?")) {
+                 reprocessSingleSession(session);
+                 saveSessions();
+                 updateAllUI();
+             } else {
+                 // if they cancel, add the history back
+                 session.history.push(session.predictions_dynamic[session.predictions_dynamic.length-1].actual);
+             }
          } 
 
          function clearCurrentSessionHistory() { 
@@ -1071,10 +975,14 @@
              if (confirm('Bạn có chắc muốn xóa toàn bộ lịch sử và thống kê của phiên này không?')) { 
                  const session = state.sessions[state.currentSessionId]; 
                  session.history = []; 
-                 session.predictions = []; 
-                 session.lengthPerformance = {}; 
-                 session.optimalLength = null; 
-                 session.lastPredictionConfidence = null;
+                 session.predictions_dynamic = [];
+                 session.lengthPerformance_dynamic = {};
+                 session.optimalLength_dynamic = null;
+                 session.lastPredictionConfidence_dynamic = null;
+                 session.predictions_conservative = [];
+                 session.lengthPerformance_conservative = {};
+                 session.optimalLength_conservative = null;
+                 session.lastPredictionConfidence_conservative = null;
                  saveSessions(); 
                  updateAllUI(); 
              } 
@@ -1179,12 +1087,14 @@
              state.sessions[newId] = {  
                  name: `Phiên ${new Date().toLocaleString('vi-VN')}`,  
                  history: [], 
-                 predictions: [],
                  predictions_dynamic: [],
+                 lengthPerformance_dynamic: {},
+                 optimalLength_dynamic: null,
+                 lastPredictionConfidence_dynamic: null,
                  predictions_conservative: [],
-                 lengthPerformance: {}, 
-                 optimalLength: null,
-                 lastPredictionConfidence: null
+                 lengthPerformance_conservative: {},
+                 optimalLength_conservative: null,
+                 lastPredictionConfidence_conservative: null,
              }; 
              saveSessions(); 
              updateSessionSelector(); 
@@ -1320,162 +1230,50 @@
              activeBtn.classList.add('bg-cyan-600', 'text-white');
              activeBtn.classList.remove('text-gray-400');
 
-             // Get predictions and update UI
              const currentSession = state.sessions[state.currentSessionId];
              if (!currentSession) return;
              
-             // Regenerate predictions for the selected tab view on the fly
-             const tempPredictions = getTemporaryPredictions(currentSession, mode);
-             updateConfidenceStatsUI(tempPredictions, currentSession.lastPredictionConfidence);
-             // Also need to refresh the main analysis view to use the correct golden range
+             const predictions = (mode === 'dynamic') ? currentSession.predictions_dynamic : currentSession.predictions_conservative;
+             const lastConfidence = (mode === 'dynamic') ? currentSession.lastPredictionConfidence_dynamic : currentSession.lastPredictionConfidence_conservative;
+             updateConfidenceStatsUI(predictions, lastConfidence);
              updateAnalysisUI();
          }
 
          function getTemporaryPredictions(session, mode) {
              if (!session) return [];
-             
-             const tempPredictions = [];
-             let tempLengthPerformance = {};
-             let tempOptimalLength = null;
-             const allHistory = Object.values(state.sessions);
-
-             const findBestPerformingLength = (lp) => {
-                 if (!lp || Object.keys(lp).length === 0) return null;
-                 const candidates = Object.entries(lp).filter(([, stats]) => stats.total > 0).map(([len, stats]) => ({
-                         length: parseInt(len),
-                         rate: stats.wins / stats.total,
-                         total: stats.total
-                 }));
-                 if (candidates.length === 0) return null;
-                 candidates.sort((a, b) => {
-                     if (b.rate !== a.rate) return b.rate - a.rate;
-                     return b.total - a.total;
-                 });
-                 return candidates[0].length;
-             };
-
-             for (let i = 0; i < session.history.length; i++) {
-                 const historyBeforeAdd = session.history.slice(0, i);
-                 const result = session.history[i];
-
-                 if (historyBeforeAdd.length < state.matcher.MIN_HISTORY_FOR_ANALYSIS) {
-                     continue;
-                 }
-
-                 const { prediction, confidence } = state.matcher.getPrediction(historyBeforeAdd, allHistory, {
-                     optimalLength: tempOptimalLength,
-                     lengthPerformance: tempLengthPerformance
-                 });
-
-                 if (prediction) {
-                     tempPredictions.push({
-                         predicted: prediction,
-                         actual: result,
-                         confidence: confidence
-                     });
-                 }
-
-                 const wasPredictionCorrect = prediction === result;
-
-                 // Update next optimal length based on the requested mode for this simulation
-                 if (mode === 'conservative' && wasPredictionCorrect && tempOptimalLength) {
-                     const pattern = historyBeforeAdd.slice(-tempOptimalLength);
-                     const { prediction: lenPrediction } = state.matcher.getPredictionForPattern(pattern, allHistory);
-                     if (lenPrediction) {
-                         if (!tempLengthPerformance[tempOptimalLength]) tempLengthPerformance[tempOptimalLength] = { wins: 0, total: 0 };
-                         const stats = tempLengthPerformance[tempOptimalLength];
-                         stats.total++;
-                         if (lenPrediction === result) stats.wins++;
-                     }
-                 } else {
-                     tempOptimalLength = updateLengthPerformanceAndFindOptimal(historyBeforeAdd, allHistory, result, { lengthPerformance: tempLengthPerformance, optimalLength: tempOptimalLength });
-                 }
-             }
-             return tempPredictions;
+             const predictionsKey = `predictions_${mode}`;
+             return session[predictionsKey] || [];
          }
 
          function loadSession(sessionId) { 
              if (state.selectionModeActive) toggleSelectionMode();
              if (state.sessions[sessionId]) { 
                  state.currentSessionId = sessionId; 
-                 state.currentPrediction = null; 
                  localStorage.setItem('lastActiveSession_v4', state.currentSessionId); 
                  updateSessionSelector(); 
                  updateAllUI(); 
              } 
          } 
           
-         // --- SETTINGS --- 
-         function saveSettings() { 
-             const oldMode = state.settings.optimalLengthMode;
-             const newSettings = { 
-                 optimalLengthMode: document.getElementById('optimalLengthMode').value
-             }; 
- 
-             // Check if the mode has changed
-             if (newSettings.optimalLengthMode !== oldMode) {
-                 if (confirm('Bạn đã thay đổi chế độ ghi nhận thống kê. Bạn có muốn tính toán lại toàn bộ phiên hiện tại với chế độ mới không?\n\nThao tác này sẽ ghi đè lên thống kê chính thức (Tỷ lệ thắng).')) {
-                     
-                     applySettings(newSettings); 
-                     
-                     const overlay = document.getElementById('progress-overlay');
-                     overlay.classList.remove('hidden');
- 
-                     setTimeout(() => { 
-                         try {
-                             const currentSession = state.sessions[state.currentSessionId];
-                             const allSessions = Object.values(state.sessions);
-                             
-                             const progress = {
-                                 processed: 0,
-                                 total: currentSession.history.length,
-                                 bar: document.getElementById('progress-bar')
-                             };
-                             
-                             reprocessSessionHistory(currentSession, allSessions, progress);
-                             
-                             localStorage.setItem('baccaratSettings_v1', JSON.stringify(state.settings)); 
-                             saveSessions(); 
-                             updateAllUI(); 
-                             alert('Đã tính toán lại thống kê chính thức và lưu cài đặt thành công!');
-                         } catch (recalcError) {
-                             alert('Đã xảy ra lỗi trong quá trình tính toán lại. Vui lòng kiểm tra console.');
-                             console.error("Recalculation error:", recalcError);
-                         } finally {
-                             overlay.classList.add('hidden');
-                         }
-                     }, 100);
-                     return; 
-                 } else {
-                     document.getElementById('optimalLengthMode').value = oldMode;
-                     return;
+         function reprocessSingleSession(session) {
+             const overlay = document.getElementById('progress-overlay');
+             overlay.classList.remove('hidden');
+             setTimeout(() => {
+                 try {
+                     const allSessions = Object.values(state.sessions);
+                     const progress = {
+                         processed: 0,
+                         total: session.history.length,
+                         bar: document.getElementById('progress-bar')
+                     };
+                     reprocessSessionHistory(session, allSessions, progress);
+                 } catch (e) {
+                     console.error("Reprocess on undo failed:", e);
+                 } finally {
+                     overlay.classList.add('hidden');
                  }
-             }
-             
-             localStorage.setItem('baccaratSettings_v1', JSON.stringify(newSettings)); 
-             applySettings(newSettings); 
-             alert('Cài đặt đã được lưu!'); 
-         } 
- 
-         function applySettings(settings) { 
-             if (settings.optimalLengthMode) {
-                state.settings.optimalLengthMode = settings.optimalLengthMode;
-             }
-         } 
-
-         function loadSettings() { 
-             const settingsStr = localStorage.getItem('baccaratSettings_v1'); 
-             const settings = settingsStr ? JSON.parse(settingsStr) : {}; 
-
-             const finalSettings = {
-                optimalLengthMode: 'dynamic', // Default value
-                ...settings
-             };
-              
-             applySettings(finalSettings); 
-
-             document.getElementById('optimalLengthMode').value = state.settings.optimalLengthMode;
-         } 
+             }, 100);
+         }
 
          // --- IMPORT / EXPORT --- 
          function exportData() { 
@@ -1561,9 +1359,14 @@
             
             // Reset session stats
             sessionToReprocess.history = [];
-            sessionToReprocess.predictions = []; // Official predictions
-            sessionToReprocess.lengthPerformance = {};
-            sessionToReprocess.optimalLength = null;
+            sessionToReprocess.predictions_dynamic = [];
+            sessionToReprocess.lengthPerformance_dynamic = {};
+            sessionToReprocess.optimalLength_dynamic = null;
+            sessionToReprocess.lastPredictionConfidence_dynamic = null;
+            sessionToReprocess.predictions_conservative = [];
+            sessionToReprocess.lengthPerformance_conservative = {};
+            sessionToReprocess.optimalLength_conservative = null;
+            sessionToReprocess.lastPredictionConfidence_conservative = null;
 
             if (progress && progress.bar) {
                 progress.bar.style.width = '0%';
@@ -1571,53 +1374,42 @@
             }
 
             for (let i = 0; i < originalHistory.length; i++) {
-                const result = originalHistory[i];
                 const historyBeforeAdd = [...sessionToReprocess.history];
+                const result = originalHistory[i];
+
+                // Get predictions for BOTH modes based on current state before this result
+                const dynamicAnalysis = state.matcher.getPrediction(historyBeforeAdd, allSessionsData, { optimalLength: sessionToReprocess.optimalLength_dynamic, lengthPerformance: sessionToReprocess.lengthPerformance_dynamic });
+                const conservativeAnalysis = state.matcher.getPrediction(historyBeforeAdd, allSessionsData, { optimalLength: sessionToReprocess.optimalLength_conservative, lengthPerformance: sessionToReprocess.lengthPerformance_conservative });
+
+                if (dynamicAnalysis.prediction) {
+                    sessionToReprocess.predictions_dynamic.push({ predicted: dynamicAnalysis.prediction, actual: result, confidence: dynamicAnalysis.confidence });
+                }
+                if (conservativeAnalysis.prediction) {
+                    sessionToReprocess.predictions_conservative.push({ predicted: conservativeAnalysis.prediction, actual: result, confidence: conservativeAnalysis.confidence });
+                }
+
+                // --- UPDATE STATE FOR NEXT ITERATION ---
+
+                // Update Dynamic Mode's performance stats with the current result
+                updatePerformanceForAllLengths(historyBeforeAdd, allSessionsData, result, sessionToReprocess.lengthPerformance_dynamic);
+
+                // Update Conservative Mode's performance stats with the current result
+                updatePerformanceForAllLengths(historyBeforeAdd, allSessionsData, result, sessionToReprocess.lengthPerformance_conservative);
                 
-                // Simulate based on the OFFICIAL selected mode in settings
-                const { prediction, confidence } = state.matcher.getPrediction(historyBeforeAdd, allSessionsData, {
-                    optimalLength: sessionToReprocess.optimalLength,
-                    lengthPerformance: sessionToReprocess.lengthPerformance
-                });
+                // Determine next optimal lengths
+                sessionToReprocess.optimalLength_dynamic = findBestPerformingLength(sessionToReprocess.lengthPerformance_dynamic);
 
-                const wasPredictionCorrect = prediction === result;
-                const currentOptimalLength = sessionToReprocess.optimalLength;
-
-                if (state.settings.optimalLengthMode === 'conservative' && wasPredictionCorrect && currentOptimalLength) {
-                    const pattern = historyBeforeAdd.slice(-currentOptimalLength);
-                    const { prediction: lenPrediction } = state.matcher.getPredictionForPattern(pattern, allSessionsData);
-                    if (lenPrediction) {
-                        if (!sessionToReprocess.lengthPerformance[currentOptimalLength]) {
-                            sessionToReprocess.lengthPerformance[currentOptimalLength] = { wins: 0, total: 0 };
-                        }
-                        const stats = sessionToReprocess.lengthPerformance[currentOptimalLength];
-                        stats.total++;
-                        if (lenPrediction === result) stats.wins++;
-                    }
-                } else {
-                    const newOptimalLength = updateLengthPerformanceAndFindOptimal(
-                        historyBeforeAdd, 
-                        allSessionsData, 
-                        result, 
-                        sessionToReprocess
-                    );
-                    sessionToReprocess.optimalLength = newOptimalLength;
-                }
-
-                if (prediction) {
-                    sessionToReprocess.predictions.push({
-                        predicted: prediction,
-                        actual: result,
-                        confidence: confidence
-                    });
-                }
+                const wasConservativeCorrect = conservativeAnalysis.prediction && conservativeAnalysis.prediction === result;
+                if (!wasConservativeCorrect) {
+                    sessionToReprocess.optimalLength_conservative = findBestPerformingLength(sessionToReprocess.lengthPerformance_conservative);
+                } // Otherwise, it stays the same
                 
                 sessionToReprocess.history.push(result);
 
                 if (progress) {
                     progress.processed++;
                     const percent = progress.total > 0 ? Math.round((progress.processed / progress.total) * 100) : 100;
-                    if (parseInt(progress.bar.textContent) !== percent) { 
+                    if (progress.bar && parseInt(progress.bar.textContent) !== percent) { 
                         progress.bar.style.width = `${percent}%`;
                         progress.bar.textContent = `${percent}%`;
                     }
@@ -1626,14 +1418,21 @@
         }
 
          function initializeApp() { 
-             loadSettings(); 
              state.sessions = getSessions(); 
               
              Object.values(state.sessions).forEach(session => { 
-                 if (!session.lengthPerformance) session.lengthPerformance = {}; 
-                 if (session.optimalLength === undefined) session.optimalLength = null; 
-                 if (session.lastPredictionConfidence === undefined) session.lastPredictionConfidence = null;
-                 if (!session.predictions) session.predictions = []; // Ensure this exists for older data
+                 if (!session.predictions_dynamic) session.predictions_dynamic = [];
+                 if (!session.lengthPerformance_dynamic) session.lengthPerformance_dynamic = {};
+                 if (session.optimalLength_dynamic === undefined) session.optimalLength_dynamic = null;
+                 if (session.lastPredictionConfidence_dynamic === undefined) session.lastPredictionConfidence_dynamic = null;
+                 
+                 if (!session.predictions_conservative) session.predictions_conservative = [];
+                 if (!session.lengthPerformance_conservative) session.lengthPerformance_conservative = {};
+                 if (session.optimalLength_conservative === undefined) session.optimalLength_conservative = null;
+                 if (session.lastPredictionConfidence_conservative === undefined) session.lastPredictionConfidence_conservative = null;
+
+                 // Deprecated cleanup
+                 delete session.predictions;
              }); 
 
              const lastActiveId = localStorage.getItem('lastActiveSession_v4'); 
