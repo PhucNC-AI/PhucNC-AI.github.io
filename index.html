@@ -98,9 +98,15 @@
 
                  <!-- Selection Mode UI (hidden by default) -->
                  <div id="selection-mode-ui" class="hidden">
-                    <p class="text-gray-300 mb-3 font-semibold">Chọn các phiên bạn muốn xóa:</p>
-                    <div id="session-checkbox-list" class="space-y-2 max-h-40 overflow-y-auto bg-gray-900/50 p-3 rounded-lg mb-4 border border-gray-700">
+                    <p class="text-gray-300 mb-3 font-semibold">Chọn các phiên bạn muốn xóa (giữ Shift để chọn nhiều):</p>
+                    <div class="space-y-2 max-h-48 overflow-y-auto bg-gray-900/50 p-3 rounded-lg mb-4 border border-gray-700">
+                        <!-- "Select All" Checkbox -->
+                        <label class="flex items-center space-x-3 bg-gray-800 p-3 rounded-md hover:bg-gray-700 cursor-pointer transition-colors sticky top-0">
+                            <input type="checkbox" id="select-all-checkbox" onclick="toggleSelectAll(this)" class="h-5 w-5 bg-gray-800 border-gray-600 rounded text-indigo-500 focus:ring-indigo-500 focus:ring-offset-gray-800">
+                            <span class="text-white font-bold">Chọn Tất Cả</span>
+                        </label>
                         <!-- Checkboxes will be generated here -->
+                        <div id="session-checkbox-list" class="space-y-2 pt-2"></div>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <button onclick="deleteMultipleSessions()" class="btn w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-4 rounded-lg">🗑️ Xóa Đã Chọn</button>
@@ -450,6 +456,7 @@
              goldenRange: null,
              selectionModeActive: false
          }; 
+         let lastCheckedCheckbox = null; // For shift-click selection
           
          // --- STATS CALCULATION --- 
          function getPredictionStats(predictions) { 
@@ -1014,8 +1021,11 @@
 
             if (sortedKeys.length === 0) {
                 listDiv.innerHTML = '<p class="text-gray-500">Không có phiên nào.</p>';
+                document.getElementById('select-all-checkbox').disabled = true;
                 return;
             }
+            document.getElementById('select-all-checkbox').disabled = false;
+
 
             sortedKeys.forEach(sessionId => {
                 const session = state.sessions[sessionId];
@@ -1027,8 +1037,10 @@
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.value = sessionId;
-                checkbox.className = 'h-5 w-5 bg-gray-800 border-gray-600 rounded text-indigo-500 focus:ring-indigo-500 focus:ring-offset-gray-800';
+                checkbox.className = 'h-5 w-5 bg-gray-800 border-gray-600 rounded text-indigo-500 focus:ring-indigo-500 focus:ring-offset-gray-800 session-checkbox-item';
                 checkbox.name = 'session-checkbox';
+                checkbox.onclick = (event) => handleCheckboxClick(event, checkbox);
+
 
                 const span = document.createElement('span');
                 span.textContent = `${session.name} (${session.history.length} ván)`;
@@ -1044,6 +1056,7 @@
                 label.appendChild(span);
                 listDiv.appendChild(label);
             });
+            updateSelectAllCheckboxState();
          }
 
          function createNewSession() { 
@@ -1113,6 +1126,7 @@
 
          function toggleSelectionMode() {
             state.selectionModeActive = !state.selectionModeActive;
+            lastCheckedCheckbox = null; // Reset for shift-click
 
             const normalModeUI = document.getElementById('normal-mode-ui');
             const selectionModeUI = document.getElementById('selection-mode-ui');
@@ -1126,6 +1140,47 @@
             }
             updateSessionSelector();
          }
+
+         function handleCheckboxClick(event, currentCheckbox) {
+            const checkboxes = Array.from(document.querySelectorAll('.session-checkbox-item:not(:disabled)'));
+
+            if (event.shiftKey && lastCheckedCheckbox) {
+                const start = checkboxes.indexOf(lastCheckedCheckbox);
+                const end = checkboxes.indexOf(currentCheckbox);
+                const range = (start < end) ? checkboxes.slice(start, end + 1) : checkboxes.slice(end, start + 1);
+                
+                range.forEach(checkbox => checkbox.checked = lastCheckedCheckbox.checked);
+            }
+            
+            lastCheckedCheckbox = currentCheckbox;
+            updateSelectAllCheckboxState();
+         }
+
+         function toggleSelectAll(source) {
+            const checkboxes = document.querySelectorAll('.session-checkbox-item:not(:disabled)');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = source.checked;
+            });
+            lastCheckedCheckbox = null;
+         }
+
+         function updateSelectAllCheckboxState() {
+            const checkboxes = document.querySelectorAll('.session-checkbox-item:not(:disabled)');
+            const checkedCount = document.querySelectorAll('.session-checkbox-item:checked:not(:disabled)').length;
+            const selectAll = document.getElementById('select-all-checkbox');
+            
+            if (checkboxes.length > 0 && checkedCount === checkboxes.length) {
+                selectAll.checked = true;
+                selectAll.indeterminate = false;
+            } else if (checkedCount > 0) {
+                selectAll.checked = false;
+                selectAll.indeterminate = true;
+            } else {
+                selectAll.checked = false;
+                selectAll.indeterminate = false;
+            }
+         }
+
 
          function toggleReliableSessions() {
             const container = document.getElementById('reliable-sessions-container');
@@ -1336,3 +1391,8 @@
      </script> 
  </body> 
  </html>
+
+
+
+
+
