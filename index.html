@@ -82,14 +82,33 @@
              <!-- Session Management --> 
              <div class="bg-gray-800 p-6 rounded-2xl shadow-lg"> 
                  <h2 class="text-xl font-semibold mb-4 text-blue-300">📁 Quản Lý Phiên</h2> 
-                 <div class="flex flex-col sm:flex-row gap-4 mb-4"> 
-                     <select id="sessionSelector" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"></select> 
-                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-4"> 
-                         <button onclick="createNewSession()" class="btn w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-4 rounded-lg">➕ Mới</button> 
-                         <button onclick="renameSession()" class="btn w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-lg">✏️ Đổi Tên</button> 
-                         <button onclick="deleteSelectedSession()" class="btn w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-4 rounded-lg">🗑️ Xóa</button> 
-                     </div> 
-                 </div> 
+                 
+                 <!-- Normal Mode UI -->
+                 <div id="normal-mode-ui">
+                    <div class="flex flex-col sm:flex-row gap-4 mb-4"> 
+                        <select id="sessionSelector" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"></select> 
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4"> 
+                            <button onclick="createNewSession()" class="btn w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-4 rounded-lg">➕ Mới</button> 
+                            <button onclick="renameSession()" class="btn w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-lg">✏️ Đổi Tên</button> 
+                            <button onclick="deleteSelectedSession()" class="btn w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-4 rounded-lg">🗑️ Xóa</button> 
+                            <button onclick="toggleSelectionMode()" class="btn w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-4 rounded-lg">📋 Chọn...</button>
+                        </div> 
+                    </div> 
+                 </div>
+
+                 <!-- Selection Mode UI (hidden by default) -->
+                 <div id="selection-mode-ui" class="hidden">
+                    <p class="text-gray-300 mb-3 font-semibold">Chọn các phiên bạn muốn xóa:</p>
+                    <div id="session-checkbox-list" class="space-y-2 max-h-40 overflow-y-auto bg-gray-900/50 p-3 rounded-lg mb-4 border border-gray-700">
+                        <!-- Checkboxes will be generated here -->
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <button onclick="deleteMultipleSessions()" class="btn w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-4 rounded-lg">🗑️ Xóa Đã Chọn</button>
+                        <button onclick="toggleSelectionMode()" class="btn w-full bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-4 rounded-lg">Hủy</button>
+                    </div>
+                 </div>
+
+
                  <!-- Import/Export --> 
                  <div class="flex flex-col sm:flex-row gap-4"> 
                      <button onclick="exportData()" class="btn w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-4 rounded-lg">📤 Xuất Dữ Liệu</button> 
@@ -101,6 +120,11 @@
                  <div class="mt-4">
                      <button onclick="toggleReliableSessions()" id="toggleReliableBtn" class="btn w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 px-4 rounded-lg">🔍 Hiện Các "Bàn Xịn"</button>
                  </div>
+
+                 <!-- Delete All Sessions -->
+                 <div class="mt-4 border-t border-red-500/30 pt-4">
+                    <button onclick="deleteAllSessions()" class="btn w-full bg-red-800 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg">🔥 XÓA TẤT CẢ CÁC PHIÊN</button>
+                </div>
 
                  <!-- Reliable Session Analysis (MOVED HERE & HIDDEN) -->
                  <div id="reliable-sessions-container" class="bg-gray-900/50 mt-6 p-4 rounded-xl shadow-inner border-2 border-transparent transition-all duration-500 hidden">
@@ -423,7 +447,8 @@
              sessions: {}, 
              matcher: new PatternMatcher(), 
              currentPrediction: null, 
-             goldenRange: null  
+             goldenRange: null,
+             selectionModeActive: false
          }; 
           
          // --- STATS CALCULATION --- 
@@ -959,6 +984,14 @@
          } 
 
          function updateSessionSelector() { 
+             if (state.selectionModeActive) {
+                updateSessionSelectorCheckboxes();
+             } else {
+                updateSessionSelectorDropdown();
+             }
+         } 
+
+         function updateSessionSelectorDropdown() {
              const selector = document.getElementById('sessionSelector'); 
              selector.innerHTML = ''; 
              const sortedKeys = Object.keys(state.sessions).sort((a, b) => parseInt(b.split('-')[1]) - parseInt(a.split('-')[1])); 
@@ -972,9 +1005,49 @@
              }); 
              selector.value = state.currentSessionId; 
              selector.onchange = () => loadSession(selector.value); 
-         } 
+         }
+
+         function updateSessionSelectorCheckboxes() {
+            const listDiv = document.getElementById('session-checkbox-list');
+            listDiv.innerHTML = '';
+            const sortedKeys = Object.keys(state.sessions).sort((a, b) => parseInt(b.split('-')[1]) - parseInt(a.split('-')[1]));
+
+            if (sortedKeys.length === 0) {
+                listDiv.innerHTML = '<p class="text-gray-500">Không có phiên nào.</p>';
+                return;
+            }
+
+            sortedKeys.forEach(sessionId => {
+                const session = state.sessions[sessionId];
+                const isCurrent = sessionId === state.currentSessionId;
+
+                const label = document.createElement('label');
+                label.className = 'flex items-center space-x-3 bg-gray-700 p-3 rounded-md hover:bg-gray-600 cursor-pointer transition-colors';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = sessionId;
+                checkbox.className = 'h-5 w-5 bg-gray-800 border-gray-600 rounded text-indigo-500 focus:ring-indigo-500 focus:ring-offset-gray-800';
+                checkbox.name = 'session-checkbox';
+
+                const span = document.createElement('span');
+                span.textContent = `${session.name} (${session.history.length} ván)`;
+                span.className = 'text-white';
+
+                if (isCurrent) {
+                    span.innerHTML += ' <span class="text-xs text-blue-400 font-bold">(hiện tại)</span>';
+                    checkbox.disabled = true;
+                    label.classList.add('opacity-70', 'cursor-not-allowed');
+                }
+
+                label.appendChild(checkbox);
+                label.appendChild(span);
+                listDiv.appendChild(label);
+            });
+         }
 
          function createNewSession() { 
+             if (state.selectionModeActive) toggleSelectionMode();
              const newId = `session-${Date.now()}`; 
              state.currentSessionId = newId; 
              state.sessions[newId] = {  
@@ -1003,6 +1076,57 @@
              } 
          } 
 
+         function deleteMultipleSessions() {
+            const checkboxes = document.querySelectorAll('input[name="session-checkbox"]:checked');
+            const idsToDelete = Array.from(checkboxes).map(cb => cb.value);
+
+            if (idsToDelete.length === 0) {
+                alert('Vui lòng chọn ít nhất một phiên để xóa.');
+                return;
+            }
+
+            const sessionNames = idsToDelete.map(id => state.sessions[id].name).join('\n - ');
+            
+            if (confirm(`Bạn có chắc muốn xóa ${idsToDelete.length} phiên đã chọn không?\n\n - ${sessionNames}\n\nHành động này không thể hoàn tác!`)) {
+                idsToDelete.forEach(id => {
+                    delete state.sessions[id];
+                });
+                
+                saveSessions();
+                toggleSelectionMode(); // Exit selection mode
+                initializeApp(); // Re-initialize to refresh the state and UI
+                alert(`${idsToDelete.length} phiên đã được xóa thành công.`);
+            }
+         }
+
+         function deleteAllSessions() {
+            if (confirm('BẠN CÓ CHẮC MUỐN XÓA TẤT CẢ CÁC PHIÊN KHÔNG?\nHành động này không thể hoàn tác!')) {
+                state.sessions = {};
+                state.currentSessionId = null;
+                localStorage.removeItem('baccaratPatternSessions_v4');
+                localStorage.removeItem('lastActiveSession_v4');
+                // Re-initialize the app, which will create a new default session
+                initializeApp();
+                alert('Đã xóa tất cả các phiên.');
+            }
+         }
+
+         function toggleSelectionMode() {
+            state.selectionModeActive = !state.selectionModeActive;
+
+            const normalModeUI = document.getElementById('normal-mode-ui');
+            const selectionModeUI = document.getElementById('selection-mode-ui');
+
+            if (state.selectionModeActive) {
+                normalModeUI.classList.add('hidden');
+                selectionModeUI.classList.remove('hidden');
+            } else {
+                normalModeUI.classList.remove('hidden');
+                selectionModeUI.classList.add('hidden');
+            }
+            updateSessionSelector();
+         }
+
          function toggleReliableSessions() {
             const container = document.getElementById('reliable-sessions-container');
             const button = document.getElementById('toggleReliableBtn');
@@ -1015,6 +1139,7 @@
          }
 
          function loadSession(sessionId) { 
+             if (state.selectionModeActive) toggleSelectionMode();
              if (state.sessions[sessionId]) { 
                  state.currentSessionId = sessionId; 
                  state.currentPrediction = null; 
