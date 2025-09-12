@@ -3,1023 +3,344 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ Thống Phân Tích Cầu (Nâng Cấp Song Song)</title>
+    <title>Hệ Thống Bắt Bài Nhà Cái (Chế Độ Chuyên Gia)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #111827; /* Tailwind gray-900 */
-            color: #F9FAFB; /* Tailwind gray-50 */
+            background-color: #111827;
+            color: #F9FAFB;
         }
-        .btn {
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        .golden-signal {
+            background: linear-gradient(145deg, #4a3a0a, #a0821c);
+            border: 2px solid #FFD700;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+            animation: golden-pulse 2s infinite;
         }
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        @keyframes golden-pulse {
+            0% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.4); }
+            50% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.8); }
+            100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.4); }
         }
-        .btn:active { transform: translateY(1px); }
-        .card-glow-p { box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
-        .card-glow-b { box-shadow: 0 0 20px rgba(239, 68, 68, 0.5); }
-
-        /* Big Road Styles */
-        #bigRoadDisplay {
-            display: grid;
-            grid-auto-flow: column;
-            grid-auto-columns: 2.5rem; /* 40px */
-            gap: 2px;
-            overflow-x: auto;
-            padding: 8px;
+        .no-signal {
+            background-color: #374151; /* gray-700 */
+            border: 2px solid #4B5563; /* gray-600 */
         }
-        .road-col { display: grid; grid-auto-rows: 2.5rem; /* 40px */ gap: 2px; }
-        .road-item {
-            width: 2.5rem; height: 2.5rem; border-radius: 9999px;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: bold; font-size: 1.125rem; color: white;
-            animation: fadeIn 0.5s ease;
+        .history-item {
+            transition: background-color 0.3s;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.8); }
-            to { opacity: 1; transform: scale(1); }
+        .history-item.win {
+            background-color: rgba(59, 130, 246, 0.2); /* blue */
         }
-
-        /* Tab Styles */
-        .tab-btn { transition: all 0.3s; }
-        .tab-btn.active { background-color: #3b82f6; color: white; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.5s; }
-
-        /* Streak Chart Styles */
-        .streak-chart { display: flex; align-items: flex-end; gap: 2px; height: 24px; }
-        .streak-bar { width: 4px; background-color: #4b5563; border-radius: 1px; }
-        .streak-bar.win { background-color: #3b82f6; height: 100%; }
-        .streak-bar.loss { background-color: #ef4444; height: 40%; }
-        
-        /* Flashing Border Animations */
-        @keyframes flash-yellow { 0%, 100% { border-color: #f59e0b; } 50% { border-color: transparent; } }
-        @keyframes flash-blue { 0%, 100% { border-color: #3b82f6; } 50% { border-color: transparent; } }
-        .flash-yellow { animation: flash-yellow 1.5s infinite; }
-        .flash-blue { animation: flash-blue 1.5s infinite; }
-
-        /* Import Progress Bar */
-        #importProgressContainer { display: none; }
+        .history-item.loss {
+            background-color: rgba(239, 68, 68, 0.2); /* red */
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
-
-    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-        <!-- Left Column: Input & History -->
-        <div class="lg:col-span-1 space-y-6">
+    <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Main Column -->
+        <div class="md:col-span-2 space-y-6">
             <!-- Header -->
-            <div class="bg-gray-800 p-6 rounded-2xl shadow-lg text-center">
-                <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-red-400">Phân Tích Cầu Song Song</h1>
-                <p class="text-gray-400 mt-2">So sánh 2 chiến lược: Linh Hoạt & Ổn Định</p>
+            <div class="bg-gray-800 p-4 rounded-2xl shadow-lg text-center">
+                <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">Hệ Thống Bắt Bài (Chế Độ Chuyên Gia)</h1>
+                <p class="text-gray-400 mt-1">Chỉ đánh khi có "Tín Hiệu Vàng"</p>
             </div>
 
-            <!-- Session Management -->
-            <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
-                <h2 class="text-xl font-semibold mb-4 text-blue-300">📁 Quản Lý Phiên</h2>
-                <div class="flex gap-4 mb-4">
-                    <select id="sessionSelector" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"></select>
-                </div>
-                <div id="session-list-container" class="hidden space-y-2 mb-4 max-h-60 overflow-y-auto"></div>
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
-                    <button onclick="createNewSession()" class="btn w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-4 rounded-lg">➕ Mới</button>
-                    <button onclick="renameSession()" class="btn w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-lg">✏️ Đổi Tên</button>
-                    <button id="select-sessions-btn" onclick="toggleSelectionMode()" class="btn w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-4 rounded-lg">📋 Chọn...</button>
-                </div>
-                 <!-- Selection Mode Controls -->
-                <div id="selection-controls" class="hidden space-y-4 mb-4">
-                    <div class="grid grid-cols-2 gap-4">
-                         <button onclick="selectAllSessions(true)" class="btn w-full bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">Chọn Tất Cả</button>
-                         <button onclick="selectAllSessions(false)" class="btn w-full bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">Bỏ Chọn</button>
-                    </div>
-                    <button onclick="deleteSelectedSessions()" class="btn w-full bg-red-700 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg">🗑️ Xóa Các Mục Đã Chọn</button>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4 mb-4">
-                     <button onclick="exportData()" class="btn w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-4 rounded-lg">📤 Xuất</button>
-                    <button onclick="document.getElementById('fileInput').click()" class="btn w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-4 rounded-lg">📥 Nhập</button>
-                    <input type="file" id="fileInput" class="hidden" accept=".json" onchange="importData(event)">
-                </div>
-                 <div class="grid grid-cols-2 gap-4">
-                     <button onclick="findGoodTables()" class="btn w-full bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-3 px-4 rounded-lg col-span-2">🔍 Hiện Các "Bàn Xịn"</button>
-                     <button onclick="deleteAllData()" class="btn w-full bg-red-800 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg mt-4 col-span-2">🔥 XÓA TẤT CẢ DỮ LIỆU</button>
-                </div>
-                 <div id="importProgressContainer" class="mt-4">
-                    <p class="text-sm text-center text-cyan-300 mb-1">Đang tính toán lại dữ liệu...</p>
-                    <div class="w-full bg-gray-700 rounded-full h-2.5">
-                        <div id="importProgressBar" class="bg-cyan-400 h-2.5 rounded-full" style="width: 0%"></div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Input Section -->
-            <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
-                <h2 class="text-xl font-semibold mb-4 text-blue-300">🎲 Nhập Kết Quả Ván Hiện Tại</h2>
-                <div class="grid grid-cols-2 gap-4 mb-4">
-                    <button onclick="addResult('P')" class="btn bg-blue-600 hover:bg-blue-500 text-white font-bold py-6 rounded-lg text-2xl"><span>👤</span> PLAYER</button>
-                    <button onclick="addResult('B')" class="btn bg-red-600 hover:bg-red-500 text-white font-bold py-6 rounded-lg text-2xl"><span>🏦</span> BANKER</button>
-                </div>
-                <div class="flex gap-4">
-                     <button onclick="undoLast()" class="btn flex-1 bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-4 rounded-lg">↩️ Hoàn Tác</button>
-                     <button onclick="clearCurrentSessionHistory()" class="btn flex-1 bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-3 px-4 rounded-lg">🗑️ Xóa Lịch Sử</button>
+            <!-- Signal Display -->
+            <div id="signal-display" class="p-8 rounded-2xl text-center transition-all duration-500 no-signal">
+                <div id="signal-content">
+                    <i class="fas fa-search text-6xl text-gray-500 mb-4"></i>
+                    <h2 class="text-3xl font-bold text-gray-400">Đang chờ tín hiệu...</h2>
+                    <p class="text-gray-500 mt-2">Nhập kết quả để hệ thống tìm kiếm cơ hội.</p>
                 </div>
             </div>
 
-            <!-- History Display -->
+             <!-- Signal History -->
             <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-semibold text-blue-300">📜 Bảng Cầu Big Road</h2>
-                    <span class="text-gray-400 font-medium">Tổng: <span id="totalGames">0</span> ván</span>
-                </div>
-                <div class="bg-gray-900 rounded-lg min-h-[220px] border border-gray-700">
-                    <div id="bigRoadDisplay"><p class="text-gray-500 p-4">Chưa có kết quả...</p></div>
+                <h2 class="text-xl font-semibold mb-4 text-yellow-300">📜 Lịch Sử Tín Hiệu Vàng (Phiên Hiện Tại)</h2>
+                <div class="space-y-2 max-h-96 overflow-y-auto pr-2" id="signalHistoryContainer">
+                    <p class="text-gray-500 text-center py-4">Chưa có tín hiệu nào được ghi nhận.</p>
                 </div>
             </div>
         </div>
 
-        <!-- Right Column: Analysis & Stats -->
-        <div class="lg:col-span-2 space-y-6">
-             <!-- Pattern Analysis -->
+        <!-- Control Column -->
+        <div class="space-y-6">
+            <!-- Input Section -->
             <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
-                <h2 class="text-xl font-semibold mb-4 text-yellow-300">🧠 Phân Tích & Đề Xuất Song Song</h2>
-                 <div id="analysisResult" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <!-- Flexible Strategy Column -->
-                     <div id="analysis-flexible" class="bg-gray-900 p-4 rounded-lg border border-gray-700">
-                        <h3 class="text-lg font-bold text-center text-cyan-300 mb-2">
-                            LINH HOẠT <span class="text-sm font-normal">(Luôn tìm tốt nhất)</span>
-                        </h3>
-                         <div class="text-gray-400 text-center py-8">Cần thêm dữ liệu...</div>
-                     </div>
-                     <!-- Stable Strategy Column -->
-                     <div id="analysis-stable" class="bg-gray-900 p-4 rounded-lg border border-gray-700">
-                        <h3 class="text-lg font-bold text-center text-purple-300 mb-2">
-                            ỔN ĐỊNH <span class="text-sm font-normal">(Bảo toàn khi thắng)</span>
-                        </h3>
-                        <div class="text-gray-400 text-center py-8">Cần thêm dữ liệu...</div>
-                     </div>
-                 </div>
-            </div>
-
-            <!-- Global Accuracy Stats -->
-            <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
-                <h2 class="text-xl font-semibold mb-4 text-green-300">🎯 Thống Kê Thắng (Toàn Cục)</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <!-- Flexible Global Stats -->
-                     <div class="bg-gray-700 p-4 rounded-lg">
-                         <p class="font-semibold text-cyan-300 mb-2">Linh Hoạt</p>
-                         <div class="flex justify-between items-center">
-                             <span id="globalAccuracyRate_flexible" class="text-2xl font-bold text-cyan-400">0.0%</span>
-                             <div>
-                                 <span id="globalCorrectPredictions_flexible" class="text-lg font-semibold text-white">0</span>
-                                 <span class="text-gray-400">/</span>
-                                 <span id="globalTotalPredictions_flexible" class="text-lg font-semibold text-white">0</span>
-                             </div>
-                         </div>
-                     </div>
-                     <!-- Stable Global Stats -->
-                     <div class="bg-gray-700 p-4 rounded-lg">
-                         <p class="font-semibold text-purple-300 mb-2">Ổn Định</p>
-                         <div class="flex justify-between items-center">
-                             <span id="globalAccuracyRate_stable" class="text-2xl font-bold text-purple-400">0.0%</span>
-                             <div>
-                                 <span id="globalCorrectPredictions_stable" class="text-lg font-semibold text-white">0</span>
-                                 <span class="text-gray-400">/</span>
-                                 <span id="globalTotalPredictions_stable" class="text-lg font-semibold text-white">0</span>
-                             </div>
-                         </div>
-                     </div>
+                <h2 class="text-xl font-semibold mb-4 text-blue-300">🎲 Nhập Kết Quả</h2>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <button onclick="addResult('P')" class="py-5 text-xl font-bold bg-blue-600 hover:bg-blue-500 rounded-lg transition">PLAYER</button>
+                    <button onclick="addResult('B')" class="py-5 text-xl font-bold bg-red-600 hover:bg-red-500 rounded-lg transition">BANKER</button>
+                </div>
+                <div class="flex gap-4">
+                    <button onclick="undoLast()" class="flex-1 py-3 bg-gray-600 hover:bg-gray-500 rounded-lg transition">↩️ Hoàn Tác</button>
+                    <button onclick="clearHistory()" class="flex-1 py-3 bg-yellow-600 hover:bg-yellow-500 rounded-lg transition">🗑️ Xóa Lịch Sử</button>
                 </div>
             </div>
 
-            <!-- Confidence Stats Table -->
+            <!-- Stats -->
             <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
-                 <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-4 gap-4">
-                     <h2 class="text-xl font-semibold text-green-300">📊 Thống Kê Độ Tin Cậy (Phiên Hiện Tại)</h2>
-                     <nav class="flex space-x-2 bg-gray-700 p-1 rounded-lg">
-                         <button onclick="switchTab('flexible')" id="tab-btn-flexible" class="tab-btn active w-full sm:w-auto px-4 py-2 text-sm font-medium rounded-md">Linh Hoạt</button>
-                         <button onclick="switchTab('stable')" id="tab-btn-stable" class="tab-btn w-full sm:w-auto px-4 py-2 text-sm font-medium rounded-md">Ổn Định</button>
-                     </nav>
-                 </div>
-                 
-                 <!-- Flexible Tab Content -->
-                 <div id="tab-content-flexible" class="tab-content active">
-                     <div id="confidenceRecommendation_flexible" class="my-4 p-3 bg-gray-900 rounded-lg text-center"></div>
-                     <div class="space-y-2" id="confidenceStatsTable_flexible"></div>
-                 </div>
-
-                 <!-- Stable Tab Content -->
-                 <div id="tab-content-stable" class="tab-content">
-                     <div id="confidenceRecommendation_stable" class="my-4 p-3 bg-gray-900 rounded-lg text-center"></div>
-                     <div class="space-y-2" id="confidenceStatsTable_stable"></div>
-                 </div>
+                <h2 class="text-xl font-semibold mb-4 text-green-300">🎯 Thống Kê "Tín Hiệu Vàng"</h2>
+                 <div class="space-y-4">
+                    <div class="flex justify-between items-center bg-gray-700/50 p-3 rounded-lg">
+                        <span class="font-medium text-gray-300">Tỷ Lệ Thắng</span>
+                        <span id="accuracyRate" class="text-2xl font-bold text-green-400">0.0%</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-gray-700/50 p-3 rounded-lg">
+                        <span class="font-medium text-gray-300">Thắng / Tổng</span>
+                        <div>
+                            <span id="correctPredictions" class="text-lg font-semibold text-white">0</span>
+                            <span class="text-gray-400">/</span>
+                            <span id="totalPredictions" class="text-lg font-semibold text-white">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+             <!-- Data Management -->
+            <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
+                 <h2 class="text-xl font-semibold mb-4 text-purple-300">📁 Dữ Liệu</h2>
+                 <div class="flex flex-col gap-4">
+                    <button onclick="exportData()" class="w-full py-3 bg-sky-600 hover:bg-sky-500 rounded-lg transition">📤 Xuất Dữ Liệu</button>
+                    <button onclick="document.getElementById('fileInput').click()" class="w-full py-3 bg-purple-600 hover:bg-purple-500 rounded-lg transition">📥 Nhập Dữ Liệu</button>
+                    <input type="file" id="fileInput" class="hidden" accept=".json" onchange="importData(event)">
+                </div>
             </div>
         </div>
     </div>
 
-    <script>
-        // --- CORE LOGIC: PATTERN MATCHER ---
-        class PatternMatcher {
-            constructor() {
-                this.MIN_HISTORY_FOR_ANALYSIS = 10;
-                // These are now fallbacks, main logic uses dynamic optimal length
-                this.MIN_PATTERN_LENGTH = 10;
-                this.MAX_PATTERN_LENGTH = 15; 
-            }
+<script>
+let state = {
+    history: [],
+    predictions: []
+};
 
-            calculateSimilarity(arr1, arr2) {
-                if (arr1.length !== arr2.length || arr1.length === 0) return 0;
-                const matches = arr1.filter((item, index) => item === arr2[index]).length;
-                return matches / arr1.length;
-            }
+// --- CORE LOGIC: HARDCODED RULES ---
+const expertRules = [
+    // Rule 1: "Cầu Đôi Trả Đôi"
+    { name: "Cầu Đôi Trả Đôi (PPBB -> B)", pattern: ['P', 'P', 'B', 'B'], prediction: 'B', minRate: 0.68 },
+    { name: "Cầu Đôi Trả Đôi (BBPP -> P)", pattern: ['B', 'B', 'P', 'P'], prediction: 'P', minRate: 0.73 },
+    // Rule 2: "Bẻ Bệt 3, Đi Bệt 2"
+    { name: "Bẻ Bệt 3, Đi Bệt 2 (PPPB -> B)", pattern: ['P', 'P', 'P', 'B'], prediction: 'B', minRate: 0.72 },
+    { name: "Bẻ Bệt 3, Đi Bệt 2 (BBBP -> P)", pattern: ['B', 'B', 'B', 'P'], prediction: 'P', minRate: 0.70 },
+    // Rule 3: "Cầu 1-2 Trả Lại"
+    { name: "Cầu 1-2 Trả Lại (PBB -> P)", pattern: ['P', 'B', 'B'], prediction: 'P', minRate: 0.72 },
+    { name: "Cầu 1-2 Trả Lại (BPP -> B)", pattern: ['B', 'P', 'P'], prediction: 'B', minRate: 0.70 }
+];
 
-            findPatternOccurrences(pattern, allHistory) {
-                const occurrences = [];
-                const reversedPattern = [...pattern].reverse();
-
-                for (const session of allHistory) {
-                    const sessionHistory = session.history || [];
-                    if (sessionHistory.length < pattern.length + 1) continue;
-                    
-                    for (let i = 0; i <= sessionHistory.length - pattern.length - 1; i++) {
-                        const segment = sessionHistory.slice(i, i + pattern.length);
-                        const nextResult = sessionHistory[i + pattern.length];
-                        const similarity = this.calculateSimilarity(pattern, segment);
-                        
-                        if (similarity >= 0.9) occurrences.push({ type: 'similar', next: nextResult, similarity });
-                        
-                        const reverseSimilarity = this.calculateSimilarity(reversedPattern, segment);
-                        if (reverseSimilarity >= 0.9) occurrences.push({ type: 'reversed', next: nextResult, similarity: reverseSimilarity });
-                    }
-                }
-                return occurrences;
-            }
-
-            getPredictionForPattern(pattern, allHistoricalSessions) {
-                const occurrences = this.findPatternOccurrences(pattern, allHistoricalSessions);
+function checkAllRules(currentHistory) {
+    for (const rule of expertRules) {
+        if (currentHistory.length < rule.pattern.length) continue;
         
-                if (occurrences.length === 0) return { prediction: null };
+        const segment = currentHistory.slice(-rule.pattern.length);
+        const isMatch = segment.every((val, index) => val === rule.pattern[index]);
 
-                const votes = { P: 0, B: 0 };
-                occurrences.forEach(match => {
-                    if (votes[match.next] !== undefined) votes[match.next] += match.similarity;
-                });
-
-                const totalVotes = votes.P + votes.B;
-                if (totalVotes === 0) return { prediction: null };
-                
-                const predictedWinner = votes.P > votes.B ? 'P' : 'B';
-                const confidence = (Math.max(votes.P, votes.B) / totalVotes) * 100;
-                
-                return { prediction: predictedWinner, confidence, votes, totalOccurrences: occurrences.length };
-            }
-
-            analyzeCurrentStreak(currentHistory) {
-                if (currentHistory.length < 2) return { type: 'none', length: currentHistory.length };
-                const last = currentHistory[currentHistory.length - 1];
-                const secondLast = currentHistory[currentHistory.length - 2];
-                if (last === secondLast) {
-                    let length = 0;
-                    for (let i = currentHistory.length - 1; i >= 0; i--) {
-                        if (currentHistory[i] === last) length++; else break;
-                    }
-                    return { type: 'bệt', length, value: last };
-                } else {
-                    let length = 0;
-                    for (let i = currentHistory.length - 1; i >= 1; i--) {
-                        if (currentHistory[i] !== currentHistory[i-1]) length++; else break;
-                    }
-                    return { type: '1-1', length: length + 1 };
-                }
-            }
-
-            getPrediction(currentHistory, allHistoricalSessions, { optimalLength = null, lengthPerformance = {} } = {}) {
-                if (currentHistory.length < this.MIN_HISTORY_FOR_ANALYSIS) {
-                    return { prediction: null, analysisText: `Cần ít nhất ${this.MIN_HISTORY_FOR_ANALYSIS} kết quả...`, confidence: 0 };
-                }
-                
-                // --- Primary Logic: Use Optimal Length if available ---
-                if (optimalLength && currentHistory.length >= optimalLength) {
-                    const pattern = currentHistory.slice(-optimalLength);
-                    const result = this.getPredictionForPattern(pattern, allHistoricalSessions);
-                    if (result.prediction) {
-                        const perf = lengthPerformance[optimalLength] || { wins: 0, total: 0 };
-                        const rate = perf.total > 0 ? (perf.wins / perf.total * 100).toFixed(1) : 'N/A';
-                        const analysisText = `Lịch sử cho thấy:\n- PLAYER: ${result.votes.P.toFixed(1)} điểm\n- BANKER: ${result.votes.B.toFixed(1)} điểm`;
-                        return { 
-                            prediction: result.prediction, 
-                            analysisText, 
-                            confidence: result.confidence,
-                            lengthUsed: optimalLength,
-                            lengthPerf: perf
-                        };
-                    }
-                }
-                
-                // --- Fallback Logic: Find any similar pattern ---
-                const allMatches = [];
-                for (let len = Math.min(this.MAX_PATTERN_LENGTH, currentHistory.length); len >= this.MIN_PATTERN_LENGTH; len--) {
-                    const pattern = currentHistory.slice(-len);
-                    const occurrences = this.findPatternOccurrences(pattern, allHistoricalSessions);
-                    if (occurrences.length > 0) {
-                        allMatches.push(...occurrences);
-                        break; 
-                    }
-                }
-
-                if (allMatches.length === 0) {
-                    return { prediction: null, analysisText: 'Không tìm thấy hình cầu tương tự.', confidence: 0 };
-                }
-
-                const votes = { P: 0, B: 0 };
-                allMatches.forEach(match => {
-                    if (votes[match.next] !== undefined) votes[match.next] += match.similarity;
-                });
-
-                const totalVotes = votes.P + votes.B;
-                if (totalVotes === 0) {
-                    return { prediction: null, analysisText: 'Không tìm thấy hình cầu tương tự.', confidence: 0 };
-                }
-
-                const confidence = (Math.max(votes.P, votes.B) / totalVotes) * 100;
-                const predictedWinner = votes.P > votes.B ? 'P' : 'B';
-
-                const analysisText = `(Dự phòng) Tìm thấy ${allMatches.length} hình cầu tương tự:\n- PLAYER: ${votes.P.toFixed(1)} điểm\n- BANKER: ${votes.B.toFixed(1)} điểm`;
-                
-                return { prediction: predictedWinner, analysisText, confidence, lengthUsed: null };
-            }
-        }
-
-        // --- GLOBAL STATE ---
-        let state = {
-            currentSessionId: null,
-            sessions: {},
-            matcher: new PatternMatcher(),
-            currentPrediction: { flexible: null, stable: null },
-            lastPredictionResult: { flexible: null, stable: null }, // To highlight last hand's range
-            selectionMode: false,
-            lastSelectedCheckbox: null,
-        };
-
-        // --- STATS CALCULATION ---
-        function getPredictionStats(predictions) {
-            const total = predictions.length;
-            if (total === 0) return { rate: 0, correct: 0, total: 0 };
-            const correct = predictions.filter(p => p.predicted === p.actual).length;
-            return { rate: (correct / total) * 100, correct, total };
-        }
-
-        // --- UI UPDATE FUNCTIONS ---
-        function updateBigRoadUI() {
-            const history = state.sessions[state.currentSessionId]?.history || [];
-            const roadDiv = document.getElementById('bigRoadDisplay');
-            document.getElementById('totalGames').textContent = history.length;
-
-            if (history.length === 0) {
-                roadDiv.innerHTML = '<p class="text-gray-500 p-4">Chưa có kết quả...</p>';
-                roadDiv.style.display = 'block';
-                return;
-            }
-            roadDiv.style.display = 'grid';
-            roadDiv.innerHTML = '';
-
-            const columns = [];
-            if (history.length > 0) {
-                let currentCol = [history[0]];
-                for (let i = 1; i < history.length; i++) {
-                    if (history[i] === history[i-1]) {
-                        currentCol.push(history[i]);
-                    } else {
-                        columns.push(currentCol);
-                        currentCol = [history[i]];
-                    }
-                }
-                columns.push(currentCol);
-            }
-
-            columns.forEach(colData => {
-                const colDiv = document.createElement('div');
-                colDiv.className = 'road-col';
-                colData.forEach(item => {
-                    const itemDiv = document.createElement('div');
-                    const bgColor = item === 'P' ? 'bg-blue-600' : 'bg-red-600';
-                    itemDiv.className = `road-item ${bgColor}`;
-                    itemDiv.textContent = item;
-                    colDiv.appendChild(itemDiv);
-                });
-                roadDiv.appendChild(colDiv);
-            });
-            roadDiv.scrollLeft = roadDiv.scrollWidth;
-        }
-
-        function updateGlobalAccuracyUI() {
-            const allFlexPredictions = Object.values(state.sessions).flatMap(s => s.strategies.flexible.predictions);
-            const allStablePredictions = Object.values(state.sessions).flatMap(s => s.strategies.stable.predictions);
-            
-            const flexStats = getPredictionStats(allFlexPredictions);
-            document.getElementById('globalAccuracyRate_flexible').textContent = `${flexStats.rate.toFixed(1)}%`;
-            document.getElementById('globalCorrectPredictions_flexible').textContent = flexStats.correct;
-            document.getElementById('globalTotalPredictions_flexible').textContent = flexStats.total;
-
-            const stableStats = getPredictionStats(allStablePredictions);
-            document.getElementById('globalAccuracyRate_stable').textContent = `${stableStats.rate.toFixed(1)}%`;
-            document.getElementById('globalCorrectPredictions_stable').textContent = stableStats.correct;
-            document.getElementById('globalTotalPredictions_stable').textContent = stableStats.total;
-        }
-
-        function updateAnalysisUI() {
-            if (!state.currentSessionId) return;
-            const session = state.sessions[state.currentSessionId];
-            const currentHistory = session.history;
-            const allHistory = Object.values(state.sessions);
-
-            // Analyze for both strategies
-            const flexResult = state.matcher.getPrediction(currentHistory, allHistory, session.strategies.flexible);
-            const stableResult = state.matcher.getPrediction(currentHistory, allHistory, session.strategies.stable);
-
-            state.currentPrediction = { flexible: flexResult, stable: stableResult };
-
-            // Update UI for each strategy
-            updateStrategyAnalysisCard('flexible', flexResult);
-            updateStrategyAnalysisCard('stable', stableResult);
-        }
-
-        function updateStrategyAnalysisCard(strategy, result) {
-            const container = document.getElementById(`analysis-${strategy}`);
-            const { prediction, analysisText, confidence, lengthUsed, lengthPerf } = result;
-
-            if (!prediction) {
-                container.innerHTML = `
-                    <h3 class="text-lg font-bold text-center ${strategy === 'flexible' ? 'text-cyan-300' : 'text-purple-300'} mb-2">
-                        ${strategy === 'flexible' ? 'LINH HOẠT' : 'ỔN ĐỊNH'}
-                        <span class="text-sm font-normal">${strategy === 'flexible' ? '(Luôn tìm tốt nhất)' : '(Bảo toàn khi thắng)'}</span>
-                    </h3>
-                    <div class="text-gray-400 text-center py-8 whitespace-pre-wrap">${analysisText}</div>`;
-                return;
-            }
-
-            const lengthDisplay = lengthUsed ? `<b class="text-white text-lg">${lengthUsed}</b>` : `<span class="text-gray-400">Đang tìm...</span>`;
-            const rateText = (lengthUsed && lengthPerf && lengthPerf.total > 0) ? `Tỷ lệ: ${(lengthPerf.wins / lengthPerf.total * 100).toFixed(1)}% (${lengthPerf.wins}/${lengthPerf.total})` : 'Chưa có thống kê';
-            
-            const lengthInfo = `
-            <div class="text-center mb-2">
-                 <span class="font-semibold text-gray-300">Độ dài cầu: ${lengthDisplay}</span>
-                 <p class="text-xs text-gray-400">${rateText}</p>
-            </div>`;
-
-            container.innerHTML = `
-                <h3 class="text-lg font-bold text-center ${strategy === 'flexible' ? 'text-cyan-300' : 'text-purple-300'} mb-2">
-                    ${strategy === 'flexible' ? 'LINH HOẠT' : 'ỔN ĐỊNH'}
-                    <span class="text-sm font-normal">${strategy === 'flexible' ? '(Luôn tìm tốt nhất)' : '(Bảo toàn khi thắng)'}</span>
-                </h3>
-                ${lengthInfo}
-                <div class="bg-gray-700 p-3 rounded-lg mb-3">
-                    <p class="text-gray-300 text-sm whitespace-pre-wrap">${analysisText}</p>
-                </div>
-                <div class="text-center bg-gray-900 py-3 rounded-lg border-2 ${prediction === 'P' ? 'border-blue-500' : 'border-red-500'}">
-                    <p class="text-lg text-gray-400">Đề xuất (${confidence.toFixed(1)}%):</p>
-                    <p class="text-4xl font-bold mt-1">${prediction === 'P' ? '👤 PLAYER' : '🏦 BANKER'}</p>
-                </div>
-            `;
-            container.classList.remove('card-glow-p', 'card-glow-b');
-            container.classList.add(prediction === 'P' ? 'card-glow-p' : 'card-glow-b');
-        }
-        
-        function updateConfidenceStatsUI(strategy) {
-            if (!state.currentSessionId || !state.sessions[state.currentSessionId]) return;
-
-            const sessionPredictions = state.sessions[state.currentSessionId].strategies[strategy].predictions || [];
-            const ranges = [
-                {min: 50, max: 60}, {min: 60, max: 70}, {min: 70, max: 80},
-                {min: 80, max: 90}, {min: 90, max: 100}
-            ];
-
-            const tableDiv = document.getElementById(`confidenceStatsTable_${strategy}`);
-            const recommendationDiv = document.getElementById(`confidenceRecommendation_${strategy}`);
-            
-            let bestRange = null;
-            let maxRate = -1;
-
-            ranges.forEach(range => {
-                const predictionsForRange = sessionPredictions.filter(p => {
-                    const conf = p.confidence;
-                    return conf >= range.min && (conf < range.max || (range.max === 100 && conf >= 100));
-                });
-                
-                range.total = predictionsForRange.length;
-                range.wins = predictionsForRange.filter(p => p.predicted === p.actual).length;
-                const rate = range.total > 0 ? (range.wins / range.total * 100) : -1;
-                range.rate = rate;
-                range.last12 = predictionsForRange.slice(-12).map(p => p.predicted === p.actual);
-
-                if (range.total >= 3 && rate > maxRate) {
-                    maxRate = rate;
-                    bestRange = range;
-                }
-            });
-            
-            if (bestRange) {
-                recommendationDiv.innerHTML = `<p class="text-sm text-yellow-300"><span class="font-bold">✨ Khoảng Vàng (Phiên):</span> Tỷ lệ thắng cao nhất là <b class="text-green-400">${maxRate.toFixed(1)}%</b> trong khoảng <b class="text-white">${bestRange.min}%-${bestRange.max}%</b>.</p>`;
-            } else {
-                recommendationDiv.innerHTML = `<p class="text-sm text-gray-400">Chưa đủ dữ liệu để tìm ra khoảng vàng (cần tối thiểu 3 phán đoán trong 1 khoảng).</p>`;
-            }
-
-            let html = `
-                <div class="grid gap-x-2 text-xs font-semibold text-gray-400 px-3" style="grid-template-columns: 2fr 1fr 1fr 2fr 3fr;">
-                    <span>Khoảng</span><span class="text-center">Tổng</span><span class="text-center">Thắng</span><span class="text-center">Tỷ Lệ</span><span class="text-right">Chuỗi 12 Ván Gần Nhất</span>
-                </div>`;
-            
-            if (sessionPredictions.length === 0) {
-                tableDiv.innerHTML = '<p class="text-gray-500 text-center py-4">Chưa có dữ liệu thống kê.</p>';
-                return;
-            }
-
-            const nextPredictionConfidence = state.currentPrediction[strategy]?.confidence;
-            const lastPredictionConfidence = state.lastPredictionResult[strategy]?.confidence;
-
-            ranges.forEach(range => {
-                const rate = range.rate;
-                const isBest = range === bestRange;
-                let highlightClass = isBest ? 'bg-green-800 bg-opacity-40 border-green-600' : 'bg-gray-700 bg-opacity-50 border-transparent';
-                
-                // Add flashing borders
-                let animationClass = '';
-                if (lastPredictionConfidence && lastPredictionConfidence >= range.min && (lastPredictionConfidence < range.max || (range.max === 100 && lastPredictionConfidence >= 100))) {
-                    animationClass = 'flash-yellow';
-                }
-                if (nextPredictionConfidence && nextPredictionConfidence >= range.min && (nextPredictionConfidence < range.max || (range.max === 100 && nextPredictionConfidence >= 100))) {
-                    animationClass = 'flash-blue';
-                }
-
-                let streakChartHTML = '<div class="streak-chart justify-end">';
-                for(let i = 0; i < 12; i++) {
-                    const result = range.last12[i];
-                    if (result === undefined) {
-                        streakChartHTML += '<div class="streak-bar"></div>';
-                    } else {
-                        streakChartHTML += `<div class="streak-bar ${result ? 'win' : 'loss'}"></div>`;
-                    }
-                }
-                streakChartHTML += '</div>';
-
-                html += `
-                    <div class="grid gap-x-2 items-center ${highlightClass} p-3 rounded-lg mt-2 transition-all duration-300 text-sm border-2 ${animationClass}" style="grid-template-columns: 2fr 1fr 1fr 2fr 3fr;">
-                        <span class="font-medium text-gray-300">${range.min}%-${range.max}%</span>
-                        <span class="text-white font-semibold text-center">${range.total}</span>
-                        <span class="text-green-400 font-semibold text-center">${range.wins}</span>
-                        <span class="font-bold text-center ${rate >= 70 ? 'text-green-400' : (rate >= 50 ? 'text-yellow-400' : 'text-red-400')}">
-                            ${rate > -1 ? rate.toFixed(1) + '%' : '-'}
-                        </span>
-                        <span class="text-right">${streakChartHTML}</span>
-                    </div>`;
-            });
-            tableDiv.innerHTML = html;
-        }
-
-        function updateAllUI() {
-            updateBigRoadUI();
-            updateGlobalAccuracyUI();
-            updateAnalysisUI(); // This sets state.currentPrediction
-            // Update confidence stats for both tabs after analysis is done
-            updateConfidenceStatsUI('flexible');
-            updateConfidenceStatsUI('stable');
-        }
-
-        function switchTab(strategy) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            document.getElementById(`tab-btn-${strategy}`).classList.add('active');
-            document.getElementById(`tab-content-${strategy}`).classList.add('active');
-        }
-
-        // --- EVENT HANDLERS & ACTIONS ---
-        function addResult(result) {
-            if (!state.currentSessionId) return;
-            const session = state.sessions[state.currentSessionId];
-            const historyBeforeAdd = [...session.history];
-            const allHistory = Object.values(state.sessions);
-            
-            state.lastPredictionResult = { // Store confidence for highlighting
-                flexible: { confidence: state.currentPrediction.flexible?.confidence },
-                stable: { confidence: state.currentPrediction.stable?.confidence },
-            };
-
-            // Process flexible strategy
-            const flexStrat = session.strategies.flexible;
-            if (state.currentPrediction.flexible?.prediction) {
-                flexStrat.predictions.push({ 
-                    predicted: state.currentPrediction.flexible.prediction, 
-                    actual: result,
-                    confidence: state.currentPrediction.flexible.confidence
-                });
-            }
-            flexStrat.optimalLength = findOptimalLength(historyBeforeAdd, allHistory, result, flexStrat.lengthPerformance);
-            
-            // Process stable strategy
-            const stableStrat = session.strategies.stable;
-            let stablePredictionCorrect = false;
-            if (state.currentPrediction.stable?.prediction) {
-                stablePredictionCorrect = state.currentPrediction.stable.prediction === result;
-                stableStrat.predictions.push({ 
-                    predicted: state.currentPrediction.stable.prediction, 
-                    actual: result,
-                    confidence: state.currentPrediction.stable.confidence
-                });
-            }
-            // Only find a new length if the prediction was wrong or doesn't exist
-            if (!stablePredictionCorrect || !stableStrat.optimalLength) {
-                stableStrat.optimalLength = findOptimalLength(historyBeforeAdd, allHistory, result, stableStrat.lengthPerformance);
-            }
-
-            session.history.push(result);
-            saveSessions();
-            updateAllUI();
-        }
-
-        function findOptimalLength(history, allSessions, newResult, lengthPerformance) {
-            if (!lengthPerformance) lengthPerformance = {};
-            const candidates = [];
-
-            for (let len = 10; len <= 20; len++) {
-                if (history.length < len) continue;
-
-                const pattern = history.slice(-len);
-                const { prediction } = state.matcher.getPredictionForPattern(pattern, allSessions);
-
-                if (prediction) {
-                    if (!lengthPerformance[len]) lengthPerformance[len] = { wins: 0, total: 0 };
-                    
-                    const stats = lengthPerformance[len];
-                    stats.total++;
-                    if (prediction === newResult) stats.wins++;
-                    
-                    if (prediction === newResult) {
-                        candidates.push({
-                            length: len,
-                            rate: stats.wins / stats.total,
-                            total: stats.total
-                        });
-                    }
-                }
-            }
-            
-            if (candidates.length === 0) return null;
-
-            candidates.sort((a, b) => {
-                if (b.rate !== a.rate) return b.rate - a.rate;
-                return b.total - a.total;
-            });
-            
-            return candidates[0].length;
-        }
-
-        function undoLast() {
-            if (!state.currentSessionId || state.sessions[state.currentSessionId].history.length === 0) return;
-            const session = state.sessions[state.currentSessionId];
-            
-            session.history.pop();
-            session.strategies.flexible.predictions.pop();
-            session.strategies.stable.predictions.pop();
-            // Note: Undoing optimal length recalculation is complex, so we accept this minor inaccuracy.
-            
-            state.lastPredictionResult = { flexible: null, stable: null }; // Clear highlight
-            saveSessions();
-            updateAllUI();
-        }
-
-        function clearCurrentSessionHistory() {
-            if (!state.currentSessionId) return;
-            if (confirm('Bạn có chắc muốn xóa toàn bộ lịch sử và thống kê của phiên này không?')) {
-                const session = state.sessions[state.currentSessionId];
-                session.history = [];
-                session.strategies = createNewStrategiesObject();
-                state.lastPredictionResult = { flexible: null, stable: null };
-                saveSessions();
-                updateAllUI();
-            }
-        }
-
-        // --- SESSION MANAGEMENT ---
-        function getSessions() {
-            try {
-                return JSON.parse(localStorage.getItem('baccaratPatternSessions_v5')) || {};
-            } catch (e) { return {}; }
-        }
-
-        function saveSessions() {
-            localStorage.setItem('baccaratPatternSessions_v5', JSON.stringify(state.sessions));
-            localStorage.setItem('lastActiveSession_v5', state.currentSessionId);
-        }
-        
-        function renameSession() {
-            if (!state.currentSessionId) return;
-            const currentName = state.sessions[state.currentSessionId].name;
-            const newName = prompt("Nhập tên mới cho phiên:", currentName);
-            if (newName && newName.trim() !== "") {
-                state.sessions[state.currentSessionId].name = newName.trim();
-                saveSessions();
-                updateSessionSelector();
-            }
-        }
-        
-        function updateSessionSelector() {
-            const selector = document.getElementById('sessionSelector');
-            const listContainer = document.getElementById('session-list-container');
-            selector.innerHTML = '';
-            listContainer.innerHTML = '';
-            const sortedKeys = Object.keys(state.sessions).sort((a, b) => parseInt(b.split('-')[1]) - parseInt(a.split('-')[1]));
-            
-            let lastShiftClicked = null; // for shift-click logic
-
-            sortedKeys.forEach((sessionId) => {
-                const session = state.sessions[sessionId];
-                
-                // For dropdown
-                const option = document.createElement('option');
-                option.value = sessionId;
-                option.textContent = `${session.name} (${session.history.length} ván)`;
-                selector.appendChild(option);
-
-                // For selection list
-                const listItem = document.createElement('div');
-                listItem.className = 'flex items-center gap-3 p-2 bg-gray-700 rounded-lg';
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.id = `check-${sessionId}`;
-                checkbox.value = sessionId;
-                checkbox.className = 'w-5 h-5 bg-gray-600 border-gray-500 rounded text-blue-500 focus:ring-blue-600';
-                
-                checkbox.onclick = (e) => {
-                    if (e.shiftKey && state.lastSelectedCheckbox) {
-                        const checkboxes = Array.from(listContainer.querySelectorAll('input[type="checkbox"]'));
-                        const start = checkboxes.indexOf(state.lastSelectedCheckbox);
-                        const end = checkboxes.indexOf(e.target);
-                        checkboxes.slice(Math.min(start, end), Math.max(start, end) + 1).forEach(box => box.checked = e.target.checked);
-                    }
-                    state.lastSelectedCheckbox = e.target;
-                };
-
-                const label = document.createElement('label');
-                label.htmlFor = `check-${sessionId}`;
-                label.textContent = option.textContent;
-                label.className = 'flex-grow text-sm';
-                listItem.appendChild(checkbox);
-                listItem.appendChild(label);
-                listContainer.appendChild(listItem);
-            });
-
-            selector.value = state.currentSessionId;
-            selector.onchange = () => loadSession(selector.value);
-        }
-
-        function createNewStrategiesObject() {
-             return {
-                flexible: { predictions: [], lengthPerformance: {}, optimalLength: null },
-                stable: { predictions: [], lengthPerformance: {}, optimalLength: null }
+        if (isMatch) {
+            return {
+                prediction: rule.prediction,
+                ruleName: rule.name
             };
         }
+    }
+    return null; // No rule matched
+}
 
-        function createNewSession() {
-            const newId = `session-${Date.now()}`;
-            state.currentSessionId = newId;
-            state.sessions[newId] = { 
-                name: `Phiên ${new Date().toLocaleString('vi-VN')}`, 
-                history: [],
-                strategies: createNewStrategiesObject()
-            };
-            saveSessions();
-            loadSession(newId);
-        }
+
+// --- UI UPDATE FUNCTIONS ---
+function updateSignalUI(signal = null) {
+    const displayDiv = document.getElementById('signal-display');
+    const contentDiv = document.getElementById('signal-content');
+
+    if (signal) {
+        displayDiv.classList.remove('no-signal');
+        displayDiv.classList.add('golden-signal');
         
-        function loadSession(sessionId) {
-            if (state.sessions[sessionId]) {
-                state.currentSessionId = sessionId;
-                state.currentPrediction = { flexible: null, stable: null };
-                state.lastPredictionResult = { flexible: null, stable: null };
-                localStorage.setItem('lastActiveSession_v5', state.currentSessionId);
-                if(state.selectionMode) toggleSelectionMode(); // Exit selection mode on load
-                updateSessionSelector();
-                updateAllUI();
-            }
-        }
+        const resultText = signal.prediction === 'P' ? 'PLAYER' : 'BANKER';
+        const icon = signal.prediction === 'P' ? '👤' : '🏦';
         
-        // --- ADVANCED SESSION MGMT ---
-        function toggleSelectionMode() {
-            state.selectionMode = !state.selectionMode;
-            document.getElementById('sessionSelector').classList.toggle('hidden', state.selectionMode);
-            document.getElementById('session-list-container').classList.toggle('hidden', !state.selectionMode);
-            document.getElementById('selection-controls').classList.toggle('hidden', !state.selectionMode);
-            const btn = document.getElementById('select-sessions-btn');
-            if (state.selectionMode) {
-                btn.textContent = '✅ Xong';
-                btn.classList.replace('bg-indigo-600', 'bg-green-600');
-                btn.classList.replace('hover:bg-indigo-500', 'hover:bg-green-500');
-                updateSessionSelector(); // Re-render to create checkboxes
-            } else {
-                btn.textContent = '📋 Chọn...';
-                btn.classList.replace('bg-green-600', 'bg-indigo-600');
-                btn.classList.replace('hover:bg-green-500', 'hover:bg-indigo-500');
-            }
-        }
+        contentDiv.innerHTML = `
+            <i class="fas fa-star text-6xl text-yellow-300 mb-4"></i>
+            <h2 class="text-3xl font-bold text-white">TÍN HIỆU VÀNG!</h2>
+            <p class="text-yellow-200 mt-2 mb-4 text-lg">Phát hiện quy luật: <br><strong>${signal.ruleName}</strong></p>
+            <div class="bg-black/30 rounded-lg p-4">
+                <p class="text-xl text-white">Đề xuất:</p>
+                <p class="text-5xl font-extrabold text-white mt-1">${icon} ${resultText}</p>
+            </div>
+        `;
+    } else {
+        displayDiv.classList.add('no-signal');
+        displayDiv.classList.remove('golden-signal');
+        contentDiv.innerHTML = `
+            <i class="fas fa-search text-6xl text-gray-500 mb-4"></i>
+            <h2 class="text-3xl font-bold text-gray-400">Đang chờ tín hiệu...</h2>
+            <p class="text-gray-500 mt-2">Nhập kết quả để hệ thống tìm kiếm cơ hội.</p>
+        `;
+    }
+}
 
-        function selectAllSessions(select) {
-             document.querySelectorAll('#session-list-container input[type="checkbox"]').forEach(box => box.checked = select);
-        }
+function updateStatsUI() {
+    const total = state.predictions.length;
+    if (total === 0) {
+        document.getElementById('accuracyRate').textContent = '0.0%';
+        document.getElementById('correctPredictions').textContent = '0';
+        document.getElementById('totalPredictions').textContent = '0';
+        return;
+    }
+    const correct = state.predictions.filter(p => p.predicted === p.actual).length;
+    const rate = (correct / total) * 100;
 
-        function deleteSelectedSessions() {
-            const selectedIds = Array.from(document.querySelectorAll('#session-list-container input:checked')).map(box => box.value);
-            if (selectedIds.length === 0) {
-                alert('Vui lòng chọn ít nhất một phiên để xóa.');
-                return;
+    document.getElementById('accuracyRate').textContent = `${rate.toFixed(1)}%`;
+    document.getElementById('correctPredictions').textContent = correct;
+    document.getElementById('totalPredictions').textContent = total;
+}
+
+function updateSignalHistoryUI() {
+    const container = document.getElementById('signalHistoryContainer');
+    if (state.predictions.length === 0) {
+        container.innerHTML = '<p class="text-gray-500 text-center py-4">Chưa có tín hiệu nào được ghi nhận.</p>';
+        return;
+    }
+
+    container.innerHTML = '';
+    [...state.predictions].reverse().forEach((p, index) => {
+        const isWin = p.predicted === p.actual;
+        const resultClass = isWin ? 'win' : 'loss';
+        const icon = isWin ? '<i class="fas fa-check-circle text-green-400"></i>' : '<i class="fas fa-times-circle text-red-400"></i>';
+        
+        const item = document.createElement('div');
+        item.className = `history-item ${resultClass} p-3 rounded-lg flex justify-between items-center`;
+        item.innerHTML = `
+            <div class="flex-grow">
+                <p class="text-xs text-gray-400">Lần ${state.predictions.length - index} - ${p.ruleName}</p>
+                <p class="font-semibold text-white">Dự đoán: ${p.predicted} | Kết quả: ${p.actual}</p>
+            </div>
+            <div class="text-2xl ml-4">${icon}</div>
+        `;
+        container.appendChild(item);
+    });
+}
+
+
+// --- EVENT HANDLERS & ACTIONS ---
+function addResult(result) {
+    const lastPrediction = checkAllRules(state.history);
+
+    if (lastPrediction) {
+        state.predictions.push({
+            predicted: lastPrediction.prediction,
+            actual: result,
+            ruleName: lastPrediction.ruleName
+        });
+    }
+
+    state.history.push(result);
+    saveState();
+    
+    const newSignal = checkAllRules(state.history);
+    updateSignalUI(newSignal);
+    updateStatsUI();
+    updateSignalHistoryUI();
+}
+
+function undoLast() {
+    if (state.history.length === 0) return;
+
+    const lastResult = state.history.pop();
+    const lastSignalCheckHistory = state.history.slice(0, -1);
+    const wasSignalBefore = checkAllRules(lastSignalCheckHistory);
+
+    if (wasSignalBefore) {
+        state.predictions.pop();
+    }
+    
+    saveState();
+
+    const newSignal = checkAllRules(state.history);
+    updateSignalUI(newSignal);
+    updateStatsUI();
+    updateSignalHistoryUI();
+}
+
+function clearHistory() {
+    if (confirm('Bạn có chắc muốn xóa toàn bộ lịch sử và thống kê của phiên này không?')) {
+        state.history = [];
+        state.predictions = [];
+        saveState();
+        updateSignalUI(null);
+        updateStatsUI();
+        updateSignalHistoryUI();
+    }
+}
+
+
+// --- DATA MANAGEMENT ---
+function saveState() {
+    localStorage.setItem('baccaratExpertState_v1', JSON.stringify(state));
+}
+
+function loadState() {
+    const savedState = localStorage.getItem('baccaratExpertState_v1');
+    if (savedState) {
+        state = JSON.parse(savedState);
+    }
+}
+
+function exportData() {
+    if (state.history.length === 0) {
+        alert("Không có dữ liệu để xuất.");
+        return;
+    }
+    const dataStr = JSON.stringify(state, null, 2);
+    const dataBlob = new Blob([dataStr], {type: "application/json"});
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.download = `baccarat_expert_backup_${new Date().toISOString().slice(0,10)}.json`;
+    link.href = url;
+    link.click();
+    URL.revokeObjectURL(url);
+}
+
+function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const importedState = JSON.parse(e.target.result);
+            if (!Array.isArray(importedState.history) || !Array.isArray(importedState.predictions)) {
+                throw new Error("Invalid file format");
             }
-            if (confirm(`Bạn có chắc muốn xóa vĩnh viễn ${selectedIds.length} phiên đã chọn không?`)) {
-                let currentSessionWasDeleted = false;
-                selectedIds.forEach(id => {
-                    if (id === state.currentSessionId) currentSessionWasDeleted = true;
-                    delete state.sessions[id];
-                });
-                
-                if (currentSessionWasDeleted || Object.keys(state.sessions).length === 0) {
-                    state.currentSessionId = null;
-                     localStorage.removeItem('lastActiveSession_v5');
-                }
-                
-                saveSessions();
+            if (confirm('Dữ liệu hiện tại sẽ bị ghi đè. Bạn có chắc muốn tiếp tục?')) {
+                state = importedState;
+                saveState();
                 initializeApp();
+                alert('Nhập dữ liệu thành công!');
             }
+        } catch (error) {
+            alert('Lỗi: File dữ liệu không hợp lệ.');
+            console.error("Import error:", error);
+        } finally {
+            event.target.value = '';
         }
+    };
+    reader.readAsText(file);
+}
 
-        function deleteAllData() {
-            if (confirm('CẢNH BÁO: Hành động này sẽ xóa TẤT CẢ các phiên và dữ liệu vĩnh viễn. Bạn có chắc chắn muốn tiếp tục không?')) {
-                localStorage.removeItem('baccaratPatternSessions_v5');
-                localStorage.removeItem('lastActiveSession_v5');
-                state.sessions = {};
-                state.currentSessionId = null;
-                initializeApp();
-            }
-        }
 
-        function findGoodTables() {
-            const allSessions = Object.values(state.sessions);
-            const goodTables = [];
-            allSessions.forEach(session => {
-                if(session.history.length < 20) return; // Skip short sessions
-                
-                const flexStats = getPredictionStats(session.strategies.flexible.predictions);
-                if (flexStats.total > 10 && (flexStats.rate > 65 || flexStats.rate < 35)) {
-                    goodTables.push(`- ${session.name}: Chế độ Linh Hoạt có tỷ lệ ${flexStats.rate.toFixed(1)}% (${flexStats.correct}/${flexStats.total})`);
-                }
+// --- INITIALIZATION ---
+function initializeApp() {
+    loadState();
+    const newSignal = checkAllRules(state.history);
+    updateSignalUI(newSignal);
+    updateStatsUI();
+    updateSignalHistoryUI();
+}
 
-                const stableStats = getPredictionStats(session.strategies.stable.predictions);
-                if (stableStats.total > 10 && (stableStats.rate > 65 || stableStats.rate < 35)) {
-                    goodTables.push(`- ${session.name}: Chế độ Ổn Định có tỷ lệ ${stableStats.rate.toFixed(1)}% (${stableStats.correct}/${stableStats.total})`);
-                }
-            });
+document.addEventListener('DOMContentLoaded', initializeApp);
 
-            if (goodTables.length > 0) {
-                alert("Tìm thấy các 'Bàn Xịn' (tỷ lệ thắng/thua rõ rệt):\n\n" + [...new Set(goodTables)].join('\n'));
-            } else {
-                alert("Không tìm thấy bàn nào có xu hướng thắng hoặc thua rõ rệt tại thời điểm này.");
-            }
-        }
-
-        // --- IMPORT / EXPORT ---
-        function exportData() {
-            if (Object.keys(state.sessions).length === 0) {
-                alert("Không có dữ liệu để xuất.");
-                return;
-            }
-            const dataStr = JSON.stringify(state.sessions, null, 2);
-            const dataBlob = new Blob([dataStr], {type: "application/json"});
-            const url = URL.createObjectURL(dataBlob);
-            const link = document.createElement('a');
-            link.download = `baccarat_backup_${new Date().toISOString().slice(0,10)}.json`;
-            link.href = url;
-            link.click();
-            URL.revokeObjectURL(url);
-        }
-
-        function importData(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const importedSessions = JSON.parse(e.target.result);
-                    if (typeof importedSessions !== 'object' || importedSessions === null) throw new Error("Invalid format");
-                    
-                    // Đã loại bỏ hộp thoại xác nhận theo yêu cầu. File mới sẽ tự động ghi đè.
-                    state.sessions = importedSessions;
-                    recalculateAllSessions(); // This is the new heavy-lifting function
-                    
-                } catch (error) {
-                    // Thay thế alert bằng console.error để tránh làm gián đoạn trải nghiệm người dùng.
-                    console.error('Lỗi: File dữ liệu không hợp lệ. Vui lòng kiểm tra lại file.', error);
-                } finally {
-                    event.target.value = '';
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        function recalculateAllSessions() {
-            const progressContainer = document.getElementById('importProgressContainer');
-            const progressBar = document.getElementById('importProgressBar');
-            progressContainer.style.display = 'block';
-            progressBar.style.width = '0%';
-
-            const allHistoryEntries = [];
-            const sessionKeys = Object.keys(state.sessions);
-
-            sessionKeys.forEach(key => {
-                const session = state.sessions[key];
-                // Ensure new structure exists
-                if (!session.strategies) {
-                    session.strategies = createNewStrategiesObject();
-                } else { // Clear old calculated data
-                    session.strategies.flexible.predictions = [];
-                    session.strategies.stable.predictions = [];
-                }
-                const history = session.history || [];
-                session.history = []; // Clear history to rebuild it step-by-step
-                for(let i=0; i<history.length; i++) {
-                    allHistoryEntries.push({ sessionId: key, result: history[i] });
-                }
-            });
-
-            let currentIndex = 0;
-            const totalEntries = allHistoryEntries.length;
-
-            function processNextEntry() {
-                if (currentIndex >= totalEntries) {
-                    // Finished
-                    progressContainer.style.display = 'none';
-                    state.currentSessionId = null;
-                    localStorage.removeItem('lastActiveSession_v5');
-                    saveSessions();
-                    initializeApp();
-                    // Thay thế alert bằng console.log để thông báo trong nền.
-                    console.log('Nhập và tính toán lại dữ liệu thành công!');
-                    return;
-                }
-                
-                const entry = allHistoryEntries[currentIndex];
-                const session = state.sessions[entry.sessionId];
-                const historyBeforeAdd = [...session.history];
-
-                // Simplified addResult logic for recalculation
-                const flexStrat = session.strategies.flexible;
-                flexStrat.optimalLength = findOptimalLength(historyBeforeAdd, Object.values(state.sessions), entry.result, flexStrat.lengthPerformance);
-                
-                const stableStrat = session.strategies.stable;
-                const stablePrediction = state.matcher.getPrediction(historyBeforeAdd, Object.values(state.sessions), stableStrat);
-                const stablePredictionCorrect = stablePrediction.prediction === entry.result;
-                if (!stablePredictionCorrect) {
-                     stableStrat.optimalLength = findOptimalLength(historyBeforeAdd, Object.values(state.sessions), entry.result, stableStrat.lengthPerformance);
-                }
-
-                session.history.push(entry.result);
-                
-                currentIndex++;
-                progressBar.style.width = `${(currentIndex / totalEntries) * 100}%`;
-                
-                // Yield to the browser to update UI
-                setTimeout(processNextEntry, 0);
-            }
-            processNextEntry();
-        }
-
-        function initializeApp() {
-            state.sessions = getSessions();
-            
-            // Ensure all loaded sessions have the new properties
-            Object.values(state.sessions).forEach(session => {
-                if (!session.strategies) {
-                    session.strategies = createNewStrategiesObject();
-                }
-            });
-
-            const lastActiveId = localStorage.getItem('lastActiveSession_v5');
-
-            if (Object.keys(state.sessions).length === 0) {
-                createNewSession();
-            } else {
-                const sortedKeys = Object.keys(state.sessions).sort((a, b) => parseInt(b.split('-')[1]) - parseInt(a.split('-')[1]));
-                const idToLoad = (lastActiveId && state.sessions[lastActiveId]) ? lastActiveId : sortedKeys[0];
-                loadSession(idToLoad);
-            }
-        }
-
-        // --- INITIALIZATION ---
-        document.addEventListener('DOMContentLoaded', initializeApp);
-    </script>
+</script>
 </body>
 </html>
-
-
-
-
