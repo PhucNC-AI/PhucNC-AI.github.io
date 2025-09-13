@@ -125,6 +125,20 @@
             height: 40%;
             background-color: #ef4444; /* red-500 */
         }
+        /* Styles for highlighting analysis methods */
+        .method-highlight-base {
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        .current-method-highlight {
+            border-color: #facc15; /* yellow-400 */
+            box-shadow: 0 0 15px rgba(250, 204, 21, 0.3);
+            background-color: rgba(74, 58, 20, 0.3);
+        }
+        .previous-method-highlight {
+            border-color: #9ca3af; /* gray-400 */
+            background-color: rgba(107, 114, 128, 0.15);
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -473,12 +487,20 @@ function updateAnalysisUI() {
 
 function updateMethodStatsUI() {
     const container = document.getElementById('methodStatsContainer');
-    if (!state.currentSessionId || !state.sessions[state.currentSessionId]) {
+    const session = state.sessions[state.currentSessionId];
+
+    if (!session) {
         container.innerHTML = '<p class="text-gray-500 text-center py-4">Chưa có dữ liệu.</p>';
         return;
     }
 
-    const predictions = state.sessions[state.currentSessionId].predictions || [];
+    const predictions = session.predictions || [];
+    const history = session.history || [];
+
+    // Determine current and previous method types for highlighting
+    const currentMethodType = state.analyzer.getPrediction(history).logicType;
+    const previousMethodType = predictions.length > 0 ? predictions[predictions.length - 1].logicType : null;
+
 
     const stats = {
         complete: { name: 'BĐX Hoàn Toàn', predictions: [] },
@@ -505,6 +527,20 @@ function updateMethodStatsUI() {
         const wins = method.predictions.filter(p => p.predicted === p.actual).length;
         const rate = total > 0 ? (wins / total * 100) : 0;
 
+        // Determine highlight class and badge
+        let highlightClass = 'method-highlight-base';
+        let badgeHtml = '';
+
+        if (key === currentMethodType) {
+            highlightClass += ' current-method-highlight';
+            badgeHtml = `<span class="text-xs font-bold bg-yellow-400 text-gray-900 px-2 py-0.5 rounded-full absolute -top-2 -right-2 transform transition-all" title="Phương pháp đang được áp dụng cho đề xuất hiện tại">Hiện tại</span>`;
+        } else if (key === previousMethodType && key !== currentMethodType) {
+            // Only show "Previous" if it's not also the "Current"
+            highlightClass += ' previous-method-highlight';
+            badgeHtml = `<span class="text-xs font-bold bg-gray-400 text-gray-900 px-2 py-0.5 rounded-full absolute -top-2 -right-2 transform transition-all" title="Phương pháp đã được dùng cho ván trước">Ván trước</span>`;
+        }
+
+
         // Build Bar Chart
         let chartHtml = '<div class="bar-chart-container mt-2">';
         if (method.predictions.length > 0) {
@@ -519,7 +555,8 @@ function updateMethodStatsUI() {
         chartHtml += '</div>';
 
         html += `
-            <div class="bg-gray-700/50 p-3 rounded-lg">
+            <div class="bg-gray-700/50 p-3 rounded-lg relative ${highlightClass}">
+                ${badgeHtml}
                 <div class="grid grid-cols-3 items-center gap-2">
                     <span class="font-semibold text-sm col-span-3 sm:col-span-1">${method.name}</span>
                     <div class="text-center">
