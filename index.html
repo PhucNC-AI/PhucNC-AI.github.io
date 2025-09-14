@@ -72,6 +72,44 @@
             from { opacity: 0; transform: scale(0.8); }
             to { opacity: 1; transform: scale(1); }
         }
+        /* Toggle Switch Styles */
+        .toggle-label {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .toggle-input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            width: 50px;
+            height: 28px;
+            background-color: #4b5563; /* gray-600 */
+            border-radius: 9999px;
+            transition: background-color 0.2s;
+            position: relative;
+        }
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            border-radius: 50%;
+            transition: transform 0.2s;
+        }
+        .toggle-input:checked + .toggle-slider {
+            background-color: #2563eb; /* blue-600 */
+        }
+        .toggle-input:checked + .toggle-slider::before {
+            transform: translateX(22px);
+        }
+
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -169,7 +207,15 @@
 
             <!-- Pattern Analysis -->
             <div id="analysis-card" class="bg-gray-800 p-6 rounded-2xl shadow-lg transition-shadow duration-500">
-                <h2 class="text-xl font-semibold mb-4 text-yellow-300">🧠 Phân Tích & Đề Xuất (AI)</h2>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-yellow-300">🧠 Phân Tích & Đề Xuất (AI)</h2>
+                    <label class="toggle-label">
+                         <input type="checkbox" id="autoModeToggle" class="toggle-input">
+                         <span class="toggle-slider"></span>
+                         <span class="ml-3 text-gray-300 font-medium">Tự Động</span>
+                    </label>
+                </div>
+                <button id="analyzeBtn" onclick="updateAnalysisUI()" class="btn w-full bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-3 px-4 rounded-lg mb-4">🔮 Phân Tích Ván Tiếp Theo</button>
                 <div id="analysisResult" class="space-y-4">
                     <p class="text-gray-400 text-center py-8">Vui lòng nhập API Key để bắt đầu...</p>
                 </div>
@@ -353,6 +399,7 @@
             accuracyTracker: new AccuracyTracker(),
             goldenRange: null,
             isAnalyzing: false, // Prevent multiple API calls at once
+            isAutoMode: false,
         };
 
         // --- UI UPDATE FUNCTIONS ---
@@ -404,6 +451,7 @@
         async function updateAnalysisUI() {
             if (state.isAnalyzing) return;
             state.isAnalyzing = true;
+            document.getElementById('analyzeBtn').disabled = true;
 
             const analysisResultDiv = document.getElementById('analysisResult');
             const analysisCard = document.getElementById('analysis-card');
@@ -438,6 +486,7 @@
                 analysisResultDiv.innerHTML = `<p class="text-gray-400 text-center py-8 whitespace-pre-wrap">${analysisText}</p>`;
             }
             state.isAnalyzing = false;
+            document.getElementById('analyzeBtn').disabled = false;
         }
         
         function updateConfidenceStatsUI() {
@@ -510,38 +559,70 @@
             tableDiv.innerHTML = html;
         }
 
-        async function updateAllUI() {
+        function resetAnalysisPanel() {
+            const analysisResultDiv = document.getElementById('analysisResult');
+            const analysisCard = document.getElementById('analysis-card');
+            analysisCard.classList.remove('card-glow-p', 'card-glow-b');
+
+            const apiKey = document.getElementById('apiKeyInput').value;
+            if (!apiKey) {
+                analysisResultDiv.innerHTML = `<p class="text-gray-400 text-center py-8">Vui lòng nhập API Key để bắt đầu...</p>`;
+                return;
+            }
+            
+            const currentHistory = state.sessions[state.currentSessionId]?.history || [];
+            const MIN_HISTORY_FOR_ANALYSIS = 5;
+            if (currentHistory.length < MIN_HISTORY_FOR_ANALYSIS) {
+                analysisResultDiv.innerHTML = `<p class="text-gray-400 text-center py-8">Cần ít nhất ${MIN_HISTORY_FOR_ANALYSIS} kết quả để AI bắt đầu phân tích...</p>`;
+            } else {
+                analysisResultDiv.innerHTML = `<p class="text-gray-400 text-center py-8">Nhấn nút "Phân Tích" để nhận đề xuất mới.</p>`;
+            }
+        }
+        
+        function updateUIOnDataChange() {
             updateBigRoadUI();
             updateAccuracyUI();
             updateConfidenceStatsUI(); 
-            await updateAnalysisUI();
+            resetAnalysisPanel();
         }
 
         // --- EVENT HANDLERS & ACTIONS ---
-        async function addResult(result) {
+        function addResult(result) {
             if (!state.currentSessionId || state.isAnalyzing) return;
             state.accuracyTracker.recordActualResult(result);
             state.sessions[state.currentSessionId].history.push(result);
             saveSessions();
-            await updateAllUI();
+            
+            updateBigRoadUI();
+            updateAccuracyUI();
+            updateConfidenceStatsUI();
+
+            if (state.isAutoMode) {
+                updateAnalysisUI();
+            } else {
+                resetAnalysisPanel();
+            }
         }
 
-        async function undoLast() {
+        function undoLast() {
             if (!state.currentSessionId || state.sessions[state.currentSessionId].history.length === 0 || state.isAnalyzing) return;
             state.sessions[state.currentSessionId].history.pop();
-            state.accuracyTracker.predictions.pop();
+            // Also remove the last prediction to keep stats in sync
+            if(state.accuracyTracker.predictions.length > 0) {
+                 state.accuracyTracker.predictions.pop();
+            }
+            state.accuracyTracker.currentPrediction = null; // Clear any pending prediction
             saveSessions();
-            await updateAllUI();
+            updateUIOnDataChange();
         }
 
-        async function clearCurrentSessionHistory() {
+        function clearCurrentSessionHistory() {
             if (!state.currentSessionId) return;
-            // NOTE: Using a custom modal is better, but confirm is simpler for this example.
             if (confirm('Bạn có chắc muốn xóa toàn bộ lịch sử của phiên này không?')) {
                 state.sessions[state.currentSessionId].history = [];
                 state.accuracyTracker.reset();
                 saveSessions();
-                await updateAllUI();
+                updateUIOnDataChange();
             }
         }
         
@@ -554,7 +635,7 @@
                 localStorage.setItem('geminiApiKey_v1', key);
                 apiKeyMessage.textContent = 'Lưu API Key thành công!';
                 setTimeout(() => apiKeyMessage.textContent = '', 3000);
-                updateAllUI(); // Re-run analysis with the new key
+                updateUIOnDataChange();
             } else {
                 apiKeyMessage.textContent = 'Vui lòng nhập một API Key.';
                 apiKeyMessage.classList.remove('text-green-400');
@@ -603,12 +684,11 @@
             state.accuracyTracker.reset();
             saveSessions();
             updateSessionSelector();
-            updateAllUI();
+            updateUIOnDataChange();
         }
 
         function deleteSelectedSession() {
             if (!state.currentSessionId || Object.keys(state.sessions).length <= 1) {
-                // Using alert for simplicity. A custom modal is better.
                 alert('Không thể xóa phiên cuối cùng.');
                 return;
             }
@@ -627,7 +707,7 @@
                 state.accuracyTracker.reset();
                 localStorage.setItem('lastActiveAISession_v1', state.currentSessionId);
                 updateSessionSelector();
-                updateAllUI();
+                updateUIOnDataChange();
             }
         }
         
@@ -677,9 +757,24 @@
             };
             reader.readAsText(file);
         }
+        
+        // --- AUTO MODE ---
+        function setupAutoModeToggle() {
+            const toggle = document.getElementById('autoModeToggle');
+            const savedMode = localStorage.getItem('baccaratAIMode_v1') === 'true';
+            state.isAutoMode = savedMode;
+            toggle.checked = savedMode;
+
+            toggle.addEventListener('change', (event) => {
+                state.isAutoMode = event.target.checked;
+                localStorage.setItem('baccaratAIMode_v1', state.isAutoMode);
+            });
+        }
+
 
         function initializeApp() {
             loadApiKey();
+            setupAutoModeToggle();
             state.sessions = getSessions();
             const lastActiveId = localStorage.getItem('lastActiveAISession_v1');
             if (Object.keys(state.sessions).length === 0) {
