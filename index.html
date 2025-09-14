@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ Thống Phân Tích Cầu (Chuyên Nghiệp)</title>
+    <title>Hệ Thống Phân Tích Cầu (Tự Tối Ưu)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
@@ -149,8 +149,8 @@
     <div class="lg:col-span-2 space-y-6">
         <!-- Header -->
         <div class="bg-gray-800 p-6 rounded-2xl shadow-lg text-center">
-            <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-red-400">Hệ Thống Phân Tích Cầu Chuyên Nghiệp</h1>
-            <p class="text-gray-400 mt-2">Logic Bất Đối Xứng (Hoàn Toàn & So Le)</p>
+            <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-red-400">Hệ Thống Phân Tích Cầu (Tự Tối Ưu)</h1>
+            <p class="text-gray-400 mt-2">Tự Động Học & Điều Chỉnh Theo Hiệu Suất</p>
         </div>
 
         <!-- Session Management -->
@@ -209,7 +209,7 @@
     <div class="space-y-6">
         <!-- Accuracy Stats -->
         <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
-            <h2 class="text-xl font-semibold mb-4 text-green-300">🎯 Thống Kê (Phiên Hiện Tại)</h2>
+            <h2 class="text-xl font-semibold mb-4 text-green-300">🎯 Thống Kê Chung (Phiên)</h2>
             <div class="space-y-4">
                 <div class="flex justify-between items-center bg-gray-700 p-4 rounded-lg">
                     <span class="font-medium text-gray-300">Tỷ Lệ Thắng</span>
@@ -247,7 +247,7 @@
         
         <!-- Method Stats -->
         <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
-            <h2 class="text-xl font-semibold mb-4 text-purple-300">📊 Thống Kê Theo Phương Pháp</h2>
+            <h2 class="text-xl font-semibold mb-4 text-purple-300">📊 Thống Kê Theo Mẫu BĐX</h2>
             <div id="methodStatsContainer" class="space-y-4">
                 <!-- Stats will be generated here by JS -->
             </div>
@@ -264,13 +264,11 @@
 </div>
 
 <script>
-// --- CORE LOGIC: ASYMMETRY ANALYZER ---
+// --- CORE LOGIC: ASYMMETRY ANALYZER V4 ---
 class AsymmetryAnalyzer {
     
     historyToColumns(history) {
-        if (!history || history.length === 0) {
-            return [];
-        }
+        if (!history || history.length === 0) return [];
         const columns = [];
         let currentCol = [history[0]];
         for (let i = 1; i < history.length; i++) {
@@ -292,91 +290,99 @@ class AsymmetryAnalyzer {
         }
         return true;
     }
-
-    getPrediction(history) {
+    
+    getActivePattern(history) {
         const columns = this.historyToColumns(history);
-        const opposite = (val) => val === 'P' ? 'B' : 'P';
-        
-        if (columns.length < 2) {
-            return { prediction: null, analysisText: "Cần tối thiểu 2 cột để phân tích.", highlightIndices: {} };
-        }
+        if (columns.length < 3) return null;
 
-        // --- HIERARCHICAL ANALYSIS ---
+        for (let i = columns.length - 2; i >= 1; i--) {
+            const asymColCandidate = columns[i];
+            const refCol = columns[i - 1];
 
-        // PRIORITY 1 & 2: Find "Complete Asymmetry" and fallback to "Alternating"
-        if (columns.length >= 3) {
-            for (let i = columns.length - 2; i >= 1; i--) {
-                const asymColCandidate = columns[i];
-                const refCol = columns[i - 1];
-                
-                // Found an asymmetrical column pair
-                if (!this.areColumnsEqual(asymColCandidate, refCol)) {
-                    const targetCol = columns[i + 1];
-                    const currentTargetLength = targetCol.length;
-                    
-                    // PRIORITY 1: Complete Asymmetry (Reference column is long enough)
-                    if (refCol.length > currentTargetLength) {
-                        let mismatchFound = false;
-                        for(let j = 0; j < currentTargetLength; j++) {
-                            if (targetCol[j] !== refCol[j]) {
-                                mismatchFound = true;
-                                break;
-                            }
-                        }
-                        
-                        let finalPrediction;
-                        let recommendation;
-
-                        if (mismatchFound) {
-                            finalPrediction = opposite(refCol[currentTargetLength]);
-                            recommendation = "BẮT CẦU BẤT ĐỐI XỨNG";
-                        } else {
-                            finalPrediction = refCol[currentTargetLength];
-                            recommendation = "THEO CẦU ĐỐI XỨNG";
-                        }
-                        
-                        return {
-                            prediction: finalPrediction,
-                            recommendation: recommendation,
-                            logicType: 'complete',
-                            analysisText: `Tìm thấy cột BĐX hoàn toàn (cột ${i+1}).\n- Cột tham chiếu: ${i}\n- Cột mục tiêu: ${i+2}`,
-                            highlightIndices: { ref: i - 1, asym: i, target: i + 1 }
-                        };
-                    } 
-                    // PRIORITY 2: Alternating Asymmetry (Reference column is exhausted)
-                    else {
-                         const prediction = opposite(targetCol[0]);
-                         return {
-                            prediction: prediction,
-                            recommendation: "BẺ CẦU (BĐX SO LE)",
-                            logicType: 'alternating',
-                            analysisText: `Cột tham chiếu (cột ${i}) đã hết.\nKích hoạt logic BĐX So Le: bẻ cầu hiện tại.`,
-                            highlightIndices: { ref: i - 1, asym: i, target: i + 1 }
-                        };
-                    }
-                }
+            if (!this.areColumnsEqual(asymColCandidate, refCol)) {
+                return {
+                    patternType: `${refCol.length}-${asymColCandidate.length}`,
+                    refCol: refCol,
+                    asymCol: asymColCandidate,
+                    targetCol: columns[i + 1],
+                    indices: { ref: i - 1, asym: i, target: i + 1 }
+                };
             }
         }
+        return null; // No asymmetry found
+    }
 
-        // PRIORITY 3: Default Symmetrical (No asymmetry found)
-        const lastCol = columns[columns.length - 2];
-        const targetCol = columns[columns.length - 1];
-        const currentTargetLength = targetCol.length;
-        
-        if (lastCol.length > currentTargetLength) {
+    getPrediction(history, patternStats = {}) {
+        const columns = this.historyToColumns(history);
+        const opposite = (val) => val === 'P' ? 'B' : 'P';
+
+        // 1. Find the active asymmetry pattern
+        const activePattern = this.getActivePattern(history);
+
+        if (activePattern) {
+            const { patternType, refCol, targetCol, indices } = activePattern;
+            const currentTargetLength = targetCol.length;
+            const stats = patternStats[patternType] || { wins: 0, total: 0 };
+            const winRate = stats.total > 0 ? (stats.wins / stats.total) * 100 : -1;
+
+            let standardPrediction;
+            let baseRecommendation;
+            let logicType;
+
+            if (refCol.length > currentTargetLength) {
+                logicType = 'complete';
+                let mismatchFound = Array.from({ length: currentTargetLength }).some((_, j) => targetCol[j] !== refCol[j]);
+                standardPrediction = mismatchFound ? opposite(refCol[currentTargetLength]) : refCol[currentTargetLength];
+                baseRecommendation = mismatchFound ? "BẮT CẦU BẤT ĐỐI XỨNG" : "THEO CẦU ĐỐI XỨNG";
+            } else {
+                logicType = 'alternating';
+                standardPrediction = opposite(targetCol[0]);
+                baseRecommendation = "BẺ CẦU (BĐX SO LE)";
+            }
+
+            let finalPrediction = standardPrediction;
+            let finalRecommendation = baseRecommendation;
+            let analysisText;
+
+            // Self-optimization logic
+            if (winRate !== -1 && winRate < 40 && stats.total >= 3) {
+                finalPrediction = opposite(standardPrediction);
+                finalRecommendation = `ĐẢO NGƯỢC (Tỷ lệ thấp)`;
+                analysisText = `Mẫu ${patternType} có tỷ lệ thắng thấp (${winRate.toFixed(1)}%), hệ thống đề xuất ngược lại.`;
+            } else if (winRate !== -1) {
+                analysisText = `Phân tích theo Mẫu ${patternType} (Tỷ lệ thắng: ${winRate.toFixed(1)}% - ${stats.wins}/${stats.total}).`;
+            } else {
+                analysisText = `Phân tích theo Mẫu ${patternType} (Mẫu mới, chưa có dữ liệu).`;
+            }
+            
             return {
-                prediction: lastCol[currentTargetLength],
-                recommendation: "THEO CẦU ĐỐI XỨNG (MẶC ĐỊNH)",
-                logicType: 'default',
-                analysisText: "Không tìm thấy điểm gãy BĐX.\nDự đoán cầu đối xứng sẽ tiếp diễn.",
-                highlightIndices: { defaultRef: columns.length - 2, target: columns.length - 1 }
+                prediction: finalPrediction,
+                recommendation: finalRecommendation,
+                logicType,
+                patternType,
+                analysisText,
+                highlightIndices: indices
             };
         }
 
-        // Final fallback if no logic applies
+        // 2. Fallback to Default Symmetrical
+        if (columns.length >= 2) {
+            const lastCol = columns[columns.length - 2];
+            const targetCol = columns[columns.length - 1];
+            if (lastCol.length > targetCol.length) {
+                return {
+                    prediction: lastCol[targetCol.length],
+                    recommendation: "THEO CẦU ĐỐI XỨNG (MẶC ĐỊNH)",
+                    logicType: 'default',
+                    analysisText: "Không tìm thấy điểm gãy BĐX. Dự đoán cầu đối xứng sẽ tiếp diễn.",
+                    highlightIndices: { defaultRef: columns.length - 2, target: columns.length - 1 }
+                };
+            }
+        }
+        
         return {
             prediction: null,
-            analysisText: "Không đủ dữ liệu cho logic đối xứng mặc định.",
+            analysisText: "Không đủ dữ liệu để phân tích.",
             highlightIndices: {}
         };
     }
@@ -389,7 +395,6 @@ let state = {
     analyzer: new AsymmetryAnalyzer(),
 };
 
-
 // --- STATS CALCULATION ---
 function getPredictionStats(predictions) {
     const total = predictions.length;
@@ -401,6 +406,7 @@ function getPredictionStats(predictions) {
 // --- UI UPDATE FUNCTIONS ---
 function updateBigRoadUI() {
     const history = state.sessions[state.currentSessionId]?.history || [];
+    const patternStats = state.sessions[state.currentSessionId]?.patternStats || {};
     const roadDiv = document.getElementById('bigRoadDisplay');
     document.getElementById('totalGames').textContent = history.length;
 
@@ -412,7 +418,7 @@ function updateBigRoadUI() {
     roadDiv.style.display = 'grid';
     roadDiv.innerHTML = '';
     
-    const analysisResult = state.analyzer.getPrediction(history);
+    const analysisResult = state.analyzer.getPrediction(history, patternStats);
     const columns = state.analyzer.historyToColumns(history);
 
     columns.forEach((colData, colIndex) => {
@@ -421,11 +427,11 @@ function updateBigRoadUI() {
         
         let highlightClass = '';
         if (analysisResult.highlightIndices) {
-            const indices = analysisResult.highlightIndices;
-            if (colIndex === indices.ref) highlightClass = 'highlight-ref-col';
-            else if (colIndex === indices.asym) highlightClass = 'highlight-asym-col';
-            else if (colIndex === indices.target) highlightClass = 'highlight-target-col';
-            else if (colIndex === indices.defaultRef) highlightClass = 'highlight-default-ref-col';
+            const { ref, asym, target, defaultRef } = analysisResult.highlightIndices;
+            if (colIndex === ref) highlightClass = 'highlight-ref-col';
+            else if (colIndex === asym) highlightClass = 'highlight-asym-col';
+            else if (colIndex === target) highlightClass = 'highlight-target-col';
+            else if (colIndex === defaultRef) highlightClass = 'highlight-default-ref-col';
         }
 
         colData.forEach(item => {
@@ -458,34 +464,35 @@ function updateGlobalAccuracyUI() {
 }
 
 function updateAnalysisUI() {
-    const history = state.sessions[state.currentSessionId]?.history || [];
-    const result = state.analyzer.getPrediction(history);
+    const session = state.sessions[state.currentSessionId] || { history: [], patternStats: {} };
+    const result = state.analyzer.getPrediction(session.history, session.patternStats);
     
     const analysisResultDiv = document.getElementById('analysisResult');
     const analysisCard = document.getElementById('analysis-card');
     analysisCard.classList.remove('card-glow-p', 'card-glow-b', 'card-glow-wait');
 
     if (result.prediction) {
+        const predictionColor = result.prediction === 'P' ? 'text-blue-400' : 'text-red-400';
+        const borderColor = result.prediction === 'P' ? 'border-blue-500' : 'border-red-500';
+
         analysisResultDiv.innerHTML = `
             <div class="bg-gray-700 p-4 rounded-lg">
                 <p class="text-gray-300 whitespace-pre-wrap">${result.analysisText}</p>
             </div>
-            <div class="text-center bg-gray-900 py-6 rounded-lg border-2 ${result.prediction === 'P' ? 'border-blue-500' : 'border-red-500'}">
+            <div class="text-center bg-gray-900 py-6 rounded-lg border-2 ${borderColor}">
                 <p class="text-lg text-gray-400 mb-2">Đề xuất:</p>
-                <p class="text-3xl font-extrabold ${result.prediction === 'P' ? 'text-blue-400' : 'text-red-400'}">${result.recommendation}</p>
+                <p class="text-3xl font-extrabold ${predictionColor}">${result.recommendation}</p>
                 <p class="text-4xl font-bold mt-2">${result.prediction === 'P' ? '👤 PLAYER' : '🏦 BANKER'}</p>
             </div>
         `;
         analysisCard.classList.add(result.prediction === 'P' ? 'card-glow-p' : 'card-glow-b');
     } else {
-        analysisResultDiv.innerHTML = `
-            <p class="text-gray-400 text-center py-8 whitespace-pre-wrap">${result.analysisText}</p>
-        `;
+        analysisResultDiv.innerHTML = `<p class="text-gray-400 text-center py-8 whitespace-pre-wrap">${result.analysisText}</p>`;
         analysisCard.classList.add('card-glow-wait');
     }
 }
 
-function updateMethodStatsUI() {
+function updatePatternStatsUI() {
     const container = document.getElementById('methodStatsContainer');
     const session = state.sessions[state.currentSessionId];
 
@@ -494,60 +501,41 @@ function updateMethodStatsUI() {
         return;
     }
 
-    const predictions = session.predictions || [];
-    const history = session.history || [];
+    const { predictions = [], patternStats = {}, history = [] } = session;
+    const currentPatternInfo = state.analyzer.getPrediction(history, patternStats);
+    const currentPatternType = currentPatternInfo.patternType;
+    const prevPrediction = predictions[predictions.length - 1];
+    const previousPatternType = prevPrediction ? prevPrediction.patternType : null;
 
-    // Determine current and previous method types for highlighting
-    const currentMethodType = state.analyzer.getPrediction(history).logicType;
-    const previousMethodType = predictions.length > 0 ? predictions[predictions.length - 1].logicType : null;
-
-
-    const stats = {
-        complete: { name: 'BĐX Hoàn Toàn', predictions: [] },
-        alternating: { name: 'BĐX So Le', predictions: [] },
-        default: { name: 'Đối Xứng Mặc Định', predictions: [] }
-    };
-
-    predictions.forEach(p => {
-        if (p.logicType && stats[p.logicType]) {
-            stats[p.logicType].predictions.push(p);
-        }
-    });
-
-    if (predictions.length === 0) {
-        container.innerHTML = '<p class="text-gray-500 text-center py-4">Chưa có phán đoán nào được ghi nhận.</p>';
+    if (Object.keys(patternStats).length === 0) {
+        container.innerHTML = '<p class="text-gray-500 text-center py-4">Chưa có mẫu BĐX nào được ghi nhận.</p>';
         return;
     }
 
     let html = '';
+    const sortedPatterns = Object.keys(patternStats).sort();
 
-    for (const key in stats) {
-        const method = stats[key];
-        const total = method.predictions.length;
-        const wins = method.predictions.filter(p => p.predicted === p.actual).length;
+    for (const key of sortedPatterns) {
+        const { wins, total } = patternStats[key];
         const rate = total > 0 ? (wins / total * 100) : 0;
-
-        // Determine highlight class and badge
+        
         let highlightClass = 'method-highlight-base';
         let badgeHtml = '';
 
-        if (key === currentMethodType) {
+        if (key === currentPatternType) {
             highlightClass += ' current-method-highlight';
             badgeHtml = `<span class="text-xs font-bold bg-yellow-400 text-gray-900 px-2 py-0.5 rounded-full absolute -top-2 -right-2 transform transition-all" title="Phương pháp đang được áp dụng cho đề xuất hiện tại">Hiện tại</span>`;
-        } else if (key === previousMethodType && key !== currentMethodType) {
-            // Only show "Previous" if it's not also the "Current"
+        } else if (key === previousPatternType && key !== currentPatternType) {
             highlightClass += ' previous-method-highlight';
             badgeHtml = `<span class="text-xs font-bold bg-gray-400 text-gray-900 px-2 py-0.5 rounded-full absolute -top-2 -right-2 transform transition-all" title="Phương pháp đã được dùng cho ván trước">Ván trước</span>`;
         }
-
-
-        // Build Bar Chart
+        
         let chartHtml = '<div class="bar-chart-container mt-2">';
-        if (method.predictions.length > 0) {
-             method.predictions.forEach(p => {
+        const predictionsForPattern = predictions.filter(p => p.patternType === key);
+        if (predictionsForPattern.length > 0) {
+             predictionsForPattern.forEach(p => {
                 const resultClass = p.predicted === p.actual ? 'win' : 'loss';
-                const title = `Dự đoán: ${p.predicted}, Thực tế: ${p.actual}`;
-                chartHtml += `<div class="bar ${resultClass}" title="${title}"></div>`;
+                chartHtml += `<div class="bar ${resultClass}" title="Dự đoán: ${p.predicted}, Thực tế: ${p.actual}"></div>`;
             });
         } else {
             chartHtml += '<div class="w-full text-center text-xs text-gray-600">Chưa có dữ liệu</div>';
@@ -558,7 +546,7 @@ function updateMethodStatsUI() {
             <div class="bg-gray-700/50 p-3 rounded-lg relative ${highlightClass}">
                 ${badgeHtml}
                 <div class="grid grid-cols-3 items-center gap-2">
-                    <span class="font-semibold text-sm col-span-3 sm:col-span-1">${method.name}</span>
+                    <span class="font-semibold text-sm col-span-3 sm:col-span-1">Mẫu (${key.replace('-',':')})</span>
                     <div class="text-center">
                         <span class="text-xs text-gray-400">Tỷ Lệ</span>
                         <p class="font-bold ${rate >= 50 ? 'text-green-400' : 'text-red-400'}">${rate.toFixed(1)}%</p>
@@ -575,13 +563,17 @@ function updateMethodStatsUI() {
     container.innerHTML = html;
 }
 
+
 function updateAllUI() {
     updateSessionListUI();
-    updateAnalysisUI(); 
-    updateBigRoadUI();
-    updateAccuracyUI();
-    updateGlobalAccuracyUI();
-    updateMethodStatsUI();
+    const session = state.sessions[state.currentSessionId];
+    if (session) {
+        updateAnalysisUI(); 
+        updateBigRoadUI();
+        updateAccuracyUI();
+        updateGlobalAccuracyUI();
+        updatePatternStatsUI();
+    }
 }
 
 // --- EVENT HANDLERS & ACTIONS ---
@@ -589,18 +581,30 @@ function addResult(result) {
     if (!state.currentSessionId) return;
     const session = state.sessions[state.currentSessionId];
     
-    const analysisResult = state.analyzer.getPrediction(session.history);
+    const analysisResult = state.analyzer.getPrediction(session.history, session.patternStats);
 
     if (analysisResult.prediction) {
         session.predictions.push({
             predicted: analysisResult.prediction,
             actual: result,
-            logicType: analysisResult.logicType
+            logicType: analysisResult.logicType,
+            patternType: analysisResult.patternType 
         });
+
+        if (analysisResult.patternType) {
+            const { patternType } = analysisResult;
+            if (!session.patternStats[patternType]) {
+                session.patternStats[patternType] = { wins: 0, total: 0 };
+            }
+            const stats = session.patternStats[patternType];
+            stats.total++;
+            if (analysisResult.prediction === result) {
+                stats.wins++;
+            }
+        }
     }
 
     session.history.push(result);
-
     saveState();
     updateAllUI();
 }
@@ -609,15 +613,25 @@ function undoLast() {
     if (!state.currentSessionId) return;
     const session = state.sessions[state.currentSessionId];
     if (session.history.length === 0) return;
+
+    const lastResult = session.history[session.history.length - 1];
+    const lastPredictionRecord = session.predictions.pop();
     
-    const historyBeforeUndo = [...session.history];
-    session.history.pop();
-    
-    const predictionForLastState = state.analyzer.getPrediction(historyBeforeUndo).prediction;
-    if (predictionForLastState && session.predictions.length > 0) {
-       session.predictions.pop();
+    if (lastPredictionRecord) {
+        const { patternType, predicted } = lastPredictionRecord;
+        if (patternType && session.patternStats[patternType]) {
+            const stats = session.patternStats[patternType];
+            stats.total--;
+            if (predicted === lastResult) {
+                stats.wins--;
+            }
+            if (stats.total <= 0) {
+                delete session.patternStats[patternType];
+            }
+        }
     }
     
+    session.history.pop();
     saveState();
     updateAllUI();
 }
@@ -629,6 +643,7 @@ function clearCurrentSessionHistory() {
         const session = state.sessions[state.currentSessionId];
         session.history = [];
         session.predictions = [];
+        session.patternStats = {};
         saveState();
         updateAllUI();
     }
@@ -636,19 +651,18 @@ function clearCurrentSessionHistory() {
 
 // --- SESSION MANAGEMENT ---
 function saveState() {
-    localStorage.setItem('baccaratAsymmetrySessions_v3', JSON.stringify(state.sessions));
-    localStorage.setItem('baccaratAsymmetryLastSession_v3', state.currentSessionId);
+    localStorage.setItem('baccaratAsymmetrySessions_v4', JSON.stringify(state.sessions));
+    localStorage.setItem('baccaratAsymmetryLastSession_v4', state.currentSessionId);
 }
 
 function loadState() {
-    const sessions = localStorage.getItem('baccaratAsymmetrySessions_v3');
-    const lastSessionId = localStorage.getItem('baccaratAsymmetryLastSession_v3');
+    const sessions = localStorage.getItem('baccaratAsymmetrySessions_v4');
+    const lastSessionId = localStorage.getItem('baccaratAsymmetryLastSession_v4');
     state.sessions = sessions ? JSON.parse(sessions) : {};
     
     Object.values(state.sessions).forEach(session => {
-        if (!session.predictions) {
-            session.predictions = [];
-        }
+        if (!session.predictions) session.predictions = [];
+        if (!session.patternStats) session.patternStats = {};
     });
 
     return lastSessionId;
@@ -714,7 +728,8 @@ function createNewSession() {
     state.sessions[newId] = {
         name: `Phiên ${new Date().toLocaleString('vi-VN')}`,
         history: [],
-        predictions: []
+        predictions: [],
+        patternStats: {}
     };
     state.currentSessionId = newId;
     saveState();
@@ -724,7 +739,7 @@ function createNewSession() {
 function loadSession(sessionId) {
     if (state.sessions[sessionId]) {
         state.currentSessionId = sessionId;
-        localStorage.setItem('baccaratAsymmetryLastSession_v3', state.currentSessionId);
+        localStorage.setItem('baccaratAsymmetryLastSession_v4', state.currentSessionId);
         updateAllUI();
     }
 }
@@ -739,7 +754,7 @@ function exportData() {
     const dataBlob = new Blob([dataStr], {type: "application/json"});
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement('a');
-    link.download = `baccarat_asymmetry_backup_v3_${new Date().toISOString().slice(0,10)}.json`;
+    link.download = `baccarat_asymmetry_backup_v4_${new Date().toISOString().slice(0,10)}.json`;
     link.href = url;
     link.click();
     URL.revokeObjectURL(url);
@@ -760,12 +775,13 @@ function importData(event) {
                     throw new Error("Invalid session data");
                 }
                 if (!session.predictions) session.predictions = [];
+                if (!session.patternStats) session.patternStats = {}; // Handle old imports
             }
 
             if (confirm('Dữ liệu hiện tại sẽ bị ghi đè. Bạn có chắc muốn tiếp tục?')) {
                 state.sessions = importedSessions;
                 state.currentSessionId = null;
-                localStorage.removeItem('baccaratAsymmetryLastSession_v3');
+                localStorage.removeItem('baccaratAsymmetryLastSession_v4');
                 saveState();
                 initializeApp();
                 alert('Nhập dữ liệu thành công!');
@@ -797,5 +813,4 @@ document.addEventListener('DOMContentLoaded', initializeApp);
 </script>
 </body>
 </html>
-
 
