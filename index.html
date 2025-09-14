@@ -37,6 +37,11 @@
             height: 18px;
             animation: spin 1s linear infinite;
         }
+        .spinner-lg {
+            width: 40px;
+            height: 40px;
+            border-width: 4px;
+        }
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
@@ -93,8 +98,9 @@
                 <div class="flex flex-col sm:flex-row gap-4">
                     <input type="password" id="apiKeyInput" placeholder="Dán API Key của bạn vào đây" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-orange-500 focus:outline-none">
                     <button onclick="saveApiKey()" class="btn w-full sm:w-auto bg-orange-600 hover:bg-orange-500 text-white font-bold py-3 px-4 rounded-lg whitespace-nowrap">Lưu Key</button>
+                    <button onclick="testApiKey()" class="btn w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-4 rounded-lg whitespace-nowrap">Chẩn Đoán</button>
                 </div>
-                 <p id="apiKeyMessage" class="text-sm mt-2 text-green-400"></p>
+                 <p id="apiKeyMessage" class="text-sm mt-2 font-semibold"></p>
             </div>
 
             <!-- Session Management -->
@@ -168,15 +174,13 @@
             </div>
 
             <!-- Pattern Analysis -->
-            <div id="analysis-card" class="bg-gray-800 p-6 rounded-2xl shadow-lg transition-shadow duration-500">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-semibold text-yellow-300">🔮 Đề Xuất Cho Ván Tới</h2>
-                     <div id="aiStatus" class="flex items-center gap-2 text-sm">
-                        <!-- Status updated by JS -->
-                     </div>
+            <div id="analysis-card" class="bg-gray-800 p-6 rounded-2xl shadow-lg transition-shadow duration-500 flex flex-col min-h-[280px]">
+                <h2 class="text-xl font-semibold text-yellow-300 mb-4">🔮 Đề Xuất Cho Ván Tới</h2>
+                <div id="analysisResult" class="space-y-4 flex-grow flex flex-col justify-center">
+                    <p class="text-gray-400 text-center">Nhập kết quả để bắt đầu nhận đề xuất...</p>
                 </div>
-                <div id="analysisResult" class="space-y-4">
-                    <p class="text-gray-400 text-center py-8">Nhập kết quả để bắt đầu nhận đề xuất...</p>
+                <div id="predictionStatusFooter" class="mt-4 pt-3 border-t border-gray-700">
+                    <!-- AI Status updated by JS -->
                 </div>
             </div>
             
@@ -197,7 +201,7 @@
         
         const systemInstruction = {
             parts: [{
-                text: "Bạn là một chuyên gia phân tích Baccarat. Nhiệm vụ của bạn là học hỏi quy luật từ dữ liệu lịch sử được cung cấp (nếu có), sau đó áp dụng kiến thức đó để phân tích chuỗi kết quả của ván hiện tại và dự đoán kết quả tiếp theo ('P' cho PLAYER hoặc 'B' cho BANKER). Chỉ trả lời bằng định dạng JSON theo schema đã cho."
+                text: "Bạn là một chuyên gia phân tích Baccarat. Nhiệm vụ của bạn là học hỏi quy luật từ dữ liệu lịch sử, sau đó áp dụng kiến thức đó để phân tích chuỗi kết quả hiện tại. Hãy dự đoán kết quả tiếp theo (prediction), và đồng thời đưa ra dự đoán cho 2 kịch bản có thể xảy ra: ván tiếp theo sẽ là gì nếu ván này ra P (prediction_if_P), và ván tiếp theo sẽ là gì nếu ván này ra B (prediction_if_B). Luôn trả lời bằng định dạng JSON theo schema đã cho."
             }]
         };
 
@@ -206,9 +210,11 @@
             properties: {
                 prediction: { type: "STRING" },
                 reasoning: { type: "STRING" },
-                confidence: { type: "NUMBER" }
+                confidence: { type: "NUMBER" },
+                prediction_if_P: { type: "STRING" },
+                prediction_if_B: { type: "STRING" }
             },
-            required: ["prediction", "reasoning", "confidence"]
+            required: ["prediction", "reasoning", "confidence", "prediction_if_P", "prediction_if_B"]
         };
 
         async function callGeminiAPI(currentHistory, historicalContext, apiKey) {
@@ -216,9 +222,9 @@
             
             let userPrompt;
             if (historicalContext && historicalContext.length > 0) {
-                 userPrompt = `Dưới đây là dữ liệu lịch sử các ván cược cũ để bạn tham khảo và học hỏi quy luật: [${historicalContext.join(', ')}]. Dựa vào kiến thức đã học, hãy phân tích chuỗi kết quả của ván cược hiện tại sau đây: [${currentHistory.join(', ')}] và dự đoán kết quả tiếp theo.`;
+                 userPrompt = `Dữ liệu lịch sử: [${historicalContext.join(', ')}]. Phân tích ván hiện tại: [${currentHistory.join(', ')}] và dự đoán kết quả tiếp theo cùng 2 kịch bản.`;
             } else {
-                 userPrompt = `Dựa vào chuỗi kết quả Baccarat sau đây: [${currentHistory.join(', ')}]. Hãy phân tích và dự đoán kết quả tiếp theo.`;
+                 userPrompt = `Phân tích ván Baccarat: [${currentHistory.join(', ')}] và dự đoán kết quả tiếp theo cùng 2 kịch bản.`;
             }
             
             const payload = {
@@ -249,7 +255,7 @@
 
                 if (candidate && candidate.content?.parts?.[0]?.text) {
                     const parsedJson = JSON.parse(candidate.content.parts[0].text);
-                    if (parsedJson.prediction === 'P' || parsedJson.prediction === 'B') {
+                    if (['P', 'B'].includes(parsedJson.prediction) && ['P', 'B'].includes(parsedJson.prediction_if_P) && ['P', 'B'].includes(parsedJson.prediction_if_B)) {
                        return parsedJson;
                     }
                 }
@@ -266,11 +272,11 @@
         
         async function getAIPrediction(currentHistory, allSessions, currentSessionId) {
             const apiKey = document.getElementById('apiKeyInput').value;
-            if (!apiKey) return { prediction: null, analysisText: 'Vui lòng nhập API Key.', confidence: 0 };
+            if (!apiKey) return { error: 'Vui lòng nhập API Key.' };
             
             const MIN_HISTORY_FOR_ANALYSIS = 5;
             if (currentHistory.length < MIN_HISTORY_FOR_ANALYSIS) {
-                return { prediction: null, analysisText: `Cần ít nhất ${MIN_HISTORY_FOR_ANALYSIS} kết quả...`, confidence: 0 };
+                return { error: `Cần ít nhất ${MIN_HISTORY_FOR_ANALYSIS} kết quả...` };
             }
             
             const historicalContext = Object.keys(allSessions)
@@ -282,17 +288,7 @@
             const MAX_CURRENT_HISTORY = 75;
             const limitedCurrentHistory = currentHistory.slice(-MAX_CURRENT_HISTORY);
 
-            const result = await callGeminiAPI(limitedCurrentHistory, limitedHistoricalContext, apiKey);
-
-            if (result.error) {
-                 return { prediction: null, analysisText: result.error, confidence: 0 };
-            }
-
-            return {
-                prediction: result.prediction,
-                analysisText: result.reasoning,
-                confidence: result.confidence,
-            };
+            return await callGeminiAPI(limitedCurrentHistory, limitedHistoricalContext, apiKey);
         }
 
         // --- ACCURACY TRACKER ---
@@ -376,29 +372,36 @@
             analysisCard.classList.remove('card-glow-p', 'card-glow-b');
 
             if (predictionData && predictionData.prediction) {
+                const pColor = 'text-blue-400';
+                const bColor = 'text-red-400';
                  analysisResultDiv.innerHTML = `
-                    <div class="bg-gray-700 p-4 rounded-lg">
-                        <p class="text-gray-300 italic">"${predictionData.analysisText}"</p>
-                         <p class="text-right font-semibold text-yellow-400 mt-2">Độ tin cậy: ${predictionData.confidence.toFixed(1)}%</p>
+                    <div class="text-center bg-gray-900 py-4 rounded-lg border-2 ${predictionData.prediction === 'P' ? 'border-blue-500' : 'border-red-500'}">
+                        <p class="text-4xl font-bold ${predictionData.prediction === 'P' ? pColor : bColor}">${predictionData.prediction === 'P' ? '👤 PLAYER' : '🏦 BANKER'}</p>
+                        <p class="text-sm text-gray-400 italic mt-1">"${predictionData.reasoning}"</p>
+                        <p class="font-semibold text-yellow-400 mt-2">Độ tin cậy: ${predictionData.confidence.toFixed(1)}%</p>
                     </div>
-                    <div class="text-center bg-gray-900 py-6 rounded-lg border-2 ${predictionData.prediction === 'P' ? 'border-blue-500' : 'border-red-500'}">
-                        <p class="text-4xl font-bold mt-2 ${predictionData.prediction === 'P' ? 'text-blue-400' : 'text-red-400'}">${predictionData.prediction === 'P' ? '👤 PLAYER' : '🏦 BANKER'}</p>
+                    <div class="bg-gray-700/50 p-3 rounded-lg text-sm">
+                        <p class="text-gray-300 font-semibold mb-2 text-center">Kịch bản có thể xảy ra:</p>
+                        <div class="flex justify-around">
+                             <p><span class="font-medium">Nếu ván này ra P ➔</span> <span class="font-bold ${predictionData.prediction_if_P === 'P' ? pColor : bColor}">${predictionData.prediction_if_P}</span></p>
+                             <p><span class="font-medium">Nếu ván này ra B ➔</span> <span class="font-bold ${predictionData.prediction_if_B === 'P' ? pColor : bColor}">${predictionData.prediction_if_B}</span></p>
+                        </div>
                     </div>
                 `;
                 analysisCard.classList.add(predictionData.prediction === 'P' ? 'card-glow-p' : 'card-glow-b');
             } else {
-                 analysisResultDiv.innerHTML = `<p class="text-gray-400 text-center py-8 whitespace-pre-wrap">${predictionData ? predictionData.analysisText : 'Nhập kết quả để bắt đầu...'}</p>`;
+                 analysisResultDiv.innerHTML = `<p class="text-gray-400 text-center py-8 whitespace-pre-wrap">${predictionData ? predictionData.error : 'Nhập kết quả để bắt đầu...'}</p>`;
             }
         }
         
         function updateAIStatusUI(status) {
-             const statusDiv = document.getElementById('aiStatus');
+             const statusDiv = document.getElementById('predictionStatusFooter');
              switch(status) {
                 case 'calculating':
-                    statusDiv.innerHTML = `<div class="spinner"></div><span class="text-yellow-400">AI đang tính...</span>`;
+                    statusDiv.innerHTML = `<div class="flex items-center justify-center gap-2 text-sm"><div class="spinner"></div><span class="text-yellow-400">Đang chuẩn bị đề xuất kế tiếp...</span></div>`;
                     break;
                 case 'ready':
-                    statusDiv.innerHTML = `<span class="text-2xl">✅</span><span class="text-green-400 font-semibold">Sẵn sàng</span>`;
+                    statusDiv.innerHTML = `<div class="flex items-center justify-center gap-2 text-sm"><span class="text-xl">✅</span><span class="text-green-400 font-semibold">Sẵn sàng cho ván tới</span></div>`;
                     break;
                 default:
                     statusDiv.innerHTML = ``;
@@ -408,13 +411,36 @@
         async function preCalculateNextPrediction() {
             if (state.isCalculating) return;
             state.isCalculating = true;
-            updateAIStatusUI('calculating');
-
+            
             const currentHistory = state.sessions[state.currentSessionId]?.history || [];
+            const isInitialCalculation = currentHistory.length < 5;
+
+            if (isInitialCalculation) {
+                const analysisResultDiv = document.getElementById('analysisResult');
+                analysisResultDiv.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full">
+                        <div class="spinner spinner-lg"></div>
+                        <p class="text-gray-400 mt-4">AI đang thực hiện phân tích đầu tiên...</p>
+                    </div>`;
+                updateAIStatusUI();
+            } else {
+                 updateAIStatusUI('calculating');
+            }
+
             state.nextPrediction = await getAIPrediction(currentHistory, state.sessions, state.currentSessionId);
             
-            updateAIStatusUI('ready');
             state.isCalculating = false;
+
+            if(isInitialCalculation && state.nextPrediction.error) {
+                 displayPrediction(state.nextPrediction);
+            } else if (isInitialCalculation) {
+                const analysisResultDiv = document.getElementById('analysisResult');
+                analysisResultDiv.innerHTML = `<p class="text-gray-400 text-center py-8">Đề xuất đã sẵn sàng. Vui lòng nhập kết quả ván đầu tiên.</p>`
+            }
+            
+            if (state.nextPrediction.prediction) {
+                 updateAIStatusUI('ready');
+            }
         }
 
         function updateConfidenceStatsUI() {
@@ -479,21 +505,17 @@
         function addResult(result) {
             if (!state.currentSessionId) return;
             
-            // Record accuracy of the prediction for the hand that just finished
             state.accuracyTracker.record(state.nextPrediction, result);
-            
             state.sessions[state.currentSessionId].history.push(result);
             saveSessions();
             
-            // Immediately display the pre-calculated prediction
             displayPrediction(state.nextPrediction);
-            state.nextPrediction = null; // Clear it after showing
+            state.nextPrediction = null;
 
             updateBigRoadUI();
             updateAccuracyUI();
             updateConfidenceStatsUI();
 
-            // Start calculating the prediction for the *next* hand in the background
             preCalculateNextPrediction();
         }
 
@@ -507,8 +529,7 @@
             updateAccuracyUI();
             updateConfidenceStatsUI();
             
-            // After undoing, the 'nextPrediction' is invalid, so recalculate
-            displayPrediction(null); // Clear panel
+            displayPrediction(null);
             preCalculateNextPrediction();
         }
 
@@ -528,36 +549,76 @@
         }
         
         // --- API KEY MANAGEMENT ---
+        async function testApiKey() {
+            const apiKeyInput = document.getElementById('apiKeyInput');
+            const apiKeyMessage = document.getElementById('apiKeyMessage');
+            const key = apiKeyInput.value.trim();
+
+            if (!key) {
+                apiKeyMessage.textContent = 'Vui lòng nhập API Key để kiểm tra.';
+                apiKeyMessage.className = 'text-sm mt-2 font-semibold text-red-400';
+                return;
+            }
+
+            apiKeyMessage.textContent = 'Đang chẩn đoán kết nối...';
+            apiKeyMessage.className = 'text-sm mt-2 font-semibold text-yellow-400';
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${key}`;
+            const payload = { contents: [{ parts: [{ text: "hello" }] }] };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    apiKeyMessage.textContent = '✅ Kết nối thành công! API Key hợp lệ.';
+                    apiKeyMessage.className = 'text-sm mt-2 font-semibold text-green-400';
+                } else {
+                    if (response.status === 400) apiKeyMessage.textContent = '❌ Lỗi: API Key không hợp lệ hoặc đã bị vô hiệu hóa.';
+                    else if (response.status === 503) apiKeyMessage.textContent = '❌ Lỗi: Dịch vụ AI đang quá tải. Vui lòng thử lại sau.';
+                    else apiKeyMessage.textContent = `❌ Lỗi kết nối: ${response.statusText} (Mã: ${response.status})`;
+                    apiKeyMessage.className = 'text-sm mt-2 font-semibold text-red-400';
+                }
+            } catch (error) {
+                console.error("API Test Error:", error);
+                apiKeyMessage.textContent = '❌ Lỗi: Không thể kết nối tới máy chủ. Vui lòng kiểm tra mạng Internet.';
+                apiKeyMessage.className = 'text-sm mt-2 font-semibold text-red-400';
+            }
+        }
+
         function saveApiKey() {
             const apiKeyInput = document.getElementById('apiKeyInput');
             const apiKeyMessage = document.getElementById('apiKeyMessage');
             const key = apiKeyInput.value.trim();
             if (key) {
-                localStorage.setItem('geminiApiKey_v1', key);
+                localStorage.setItem('geminiApiKey_v4', key);
                 apiKeyMessage.textContent = 'Lưu API Key thành công!';
+                apiKeyMessage.className = 'text-sm mt-2 font-semibold text-green-400';
                 setTimeout(() => apiKeyMessage.textContent = '', 3000);
-                preCalculateNextPrediction(); // Start analysis with the new key
+                preCalculateNextPrediction();
             } else {
                  apiKeyMessage.textContent = 'Vui lòng nhập một API Key.';
-                 apiKeyMessage.classList.remove('text-green-400');
-                 apiKeyMessage.classList.add('text-red-400');
+                 apiKeyMessage.className = 'text-sm mt-2 font-semibold text-red-400';
             }
         }
 
         function loadApiKey() {
-            const savedKey = localStorage.getItem('geminiApiKey_v1');
+            const savedKey = localStorage.getItem('geminiApiKey_v4');
             if (savedKey) document.getElementById('apiKeyInput').value = savedKey;
         }
 
         // --- SESSION MANAGEMENT ---
         function getSessions() {
-            try { return JSON.parse(localStorage.getItem('baccaratAISessions_v2')) || {}; }
+            try { return JSON.parse(localStorage.getItem('baccaratAISessions_v4')) || {}; }
             catch (e) { return {}; }
         }
 
         function saveSessions() {
-            localStorage.setItem('baccaratAISessions_v2', JSON.stringify(state.sessions));
-            localStorage.setItem('lastActiveAISession_v2', state.currentSessionId);
+            localStorage.setItem('baccaratAISessions_v4', JSON.stringify(state.sessions));
+            localStorage.setItem('lastActiveAISession_v4', state.currentSessionId);
         }
 
         function updateSessionSelector() {
@@ -579,7 +640,7 @@
             const newId = `session-${Date.now()}`;
             state.currentSessionId = newId;
             state.sessions[newId] = { name: `Phiên ${new Date().toLocaleString('vi-VN')}`, history: [] };
-            loadSession(newId); // Use loadSession to reset everything properly
+            loadSession(newId);
         }
 
         function deleteSelectedSession() {
@@ -589,7 +650,7 @@
             if (confirm('Bạn có chắc muốn xóa phiên này không?')) {
                 delete state.sessions[state.currentSessionId];
                 state.currentSessionId = null;
-                localStorage.removeItem('lastActiveAISession_v2');
+                localStorage.removeItem('lastActiveAISession_v4');
                 saveSessions();
                 initializeApp();
             }
@@ -608,7 +669,6 @@
                 updateConfidenceStatsUI();
                 displayPrediction(null);
                 
-                // Start the first pre-calculation for the new session
                 preCalculateNextPrediction();
             }
         }
@@ -644,7 +704,7 @@
                     if (confirm('Dữ liệu hiện tại sẽ bị ghi đè. Bạn có chắc muốn tiếp tục?')) {
                         state.sessions = importedSessions;
                         state.currentSessionId = null;
-                        localStorage.removeItem('lastActiveAISession_v2');
+                        localStorage.removeItem('lastActiveAISession_v4');
                         saveSessions();
                         initializeApp();
                         alert('Nhập dữ liệu thành công!');
@@ -660,16 +720,17 @@
         }
         
         function initializeApp() {
-            // Remove old version data to prevent conflicts
-            localStorage.removeItem('baccaratAIMode_v1');
-            localStorage.removeItem('geminiApiKey_v1');
-            localStorage.removeItem('baccaratAISessions_v1');
-            localStorage.removeItem('lastActiveAISession_v1');
-
+            // Cleanup old data
+            const versionsToClean = ['v1', 'v2', 'v3'];
+            versionsToClean.forEach(v => {
+                 localStorage.removeItem(`geminiApiKey_${v}`);
+                 localStorage.removeItem(`baccaratAISessions_${v}`);
+                 localStorage.removeItem(`lastActiveAISession_${v}`);
+            });
 
             loadApiKey();
             state.sessions = getSessions();
-            const lastActiveId = localStorage.getItem('lastActiveAISession_v2');
+            const lastActiveId = localStorage.getItem('lastActiveAISession_v4');
             if (Object.keys(state.sessions).length === 0) {
                 createNewSession();
             } else {
