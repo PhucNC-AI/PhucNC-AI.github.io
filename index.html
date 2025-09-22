@@ -914,17 +914,55 @@ function loadSession(sessionId) {
     }
 }
 
-// --- IMPORT / EXPORT ---
-function exportData() {
-    if (Object.keys(state.sessions).length === 0) { showToast("Không có dữ liệu để xuất.", 'error'); return; }
-    const dataStr = JSON.stringify(state.sessions, null, 2);
-    const dataBlob = new Blob([dataStr], {type: "application/json"});
-    const link = document.createElement('a');
-    link.download = `baccarat_backup_${new Date().toISOString().slice(0,10)}.json`;
-    link.href = URL.createObjectURL(dataBlob);
-    link.click();
-    URL.revokeObjectURL(link.href);
+// --- IMPORT / EXPORT & RECALCULATION ---
+function recalculateAllStats() {
+    const allSessionsForContext = Object.values(state.sessions);
+
+    for (const sessionId in state.sessions) {
+        const session = state.sessions[sessionId];
+        const fullHistory = [...session.history];
+        
+        session.predictions = [];
+        session.verdictPredictions = [];
+
+        if (fullHistory.length < state.matcher.MIN_HISTORY_FOR_ANALYSIS) continue;
+
+        for (let i = state.matcher.MIN_HISTORY_FOR_ANALYSIS; i < fullHistory.length; i++) {
+            const historySlice = fullHistory.slice(0, i);
+            const actualResult = fullHistory[i];
+            
+            // --- This is an approximation: uses the final state of other sessions as context ---
+            const { prediction, confidence, isCertain } = state.matcher.getPrediction(historySlice, allSessionsForContext);
+
+            if (prediction) {
+                session.predictions.push({ predicted: prediction, actual: actualResult, confidence: confidence });
+                
+                // Verdict must be calculated using the stats available AT THIS POINT in the simulation
+                const sequenceDataAtPointInTime = getConfidenceSequenceData(); // This still uses final state, an acceptable approximation
+                
+                const verdictContext = {
+                    prediction, confidence,
+                    sequenceData: sequenceDataAtPointInTime,
+                    currentSessionId: sessionId
+                };
+                const finalVerdict = getFinalVerdict(verdictContext);
+
+                let finalPrediction = prediction;
+                if (finalVerdict.verdict === 'against' && !isCertain) {
+                    finalPrediction = prediction === 'P' ? 'B' : 'P';
+                }
+
+                if (!session.verdictPredictions) session.verdictPredictions = [];
+                 session.verdictPredictions.push({
+                    verdict: finalVerdict.verdict,
+                    predicted: finalPrediction,
+                    actual: actualResult
+                });
+            }
+        }
+    }
 }
+
 function importData(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -944,10 +982,16 @@ function importData(event) {
             showCustomConfirm('Dữ liệu hiện tại sẽ bị ghi đè. Bạn có chắc muốn tiếp tục?', () => {
                 state.sessions = importedSessions;
                 state.currentSessionId = null;
-                localStorage.removeItem('lastActiveSession_v7');
-                saveSessions();
-                initializeApp();
-                showToast('Nhập dữ liệu thành công!', 'success');
+                
+                showLoadingModal('Đang tính toán lại toàn bộ lịch sử...');
+
+                setTimeout(() => {
+                    recalculateAllStats();
+                    saveSessions();
+                    initializeApp();
+                    hideLoadingModal();
+                    showToast('Nhập và tính toán thành công!', 'success');
+                }, 100);
             });
         } catch (error) {
             showToast('Lỗi: File dữ liệu không hợp lệ.', 'error');
@@ -971,6 +1015,24 @@ function showToast(message, type = 'info') {
     toast.textContent = message;
     container.appendChild(toast);
     setTimeout(() => { toast.remove(); }, 3000);
+}
+function showLoadingModal(message) {
+    const container = document.getElementById('modal-container');
+    container.innerHTML = `
+        <div id="loading-modal" class="modal-backdrop">
+            <div class="modal-content text-center">
+                <p class="text-lg text-gray-200">${message}</p>
+                <div class="mt-4">
+                    <svg class="animate-spin h-8 w-8 text-white mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>`;
+}
+function hideLoadingModal() {
+    document.getElementById('modal-container').innerHTML = '';
 }
 function showCustomConfirm(message, onConfirm) {
     const container = document.getElementById('modal-container');
@@ -1015,16 +1077,6 @@ function showCustomPrompt(message, defaultValue, onConfirm) {
 function initializeApp() {
     state.sessions = getSessions();
     
-    // Data migration for old versions
-    if ((localStorage.getItem('baccaratPatternSessions_v5') || localStorage.getItem('baccaratPatternSessions_v6')) && !localStorage.getItem('baccaratPatternSessions_v7')) {
-        state.sessions = JSON.parse(localStorage.getItem('baccaratPatternSessions_v6') || localStorage.getItem('baccaratPatternSessions_v5')) || {};
-        saveSessions();
-        localStorage.removeItem('baccaratPatternSessions_v5');
-        localStorage.removeItem('lastActiveSession_v5');
-        localStorage.removeItem('baccaratPatternSessions_v6');
-        localStorage.removeItem('lastActiveSession_v6');
-    }
-
     Object.values(state.sessions).forEach(s => {
         if (!s.lengthPerformance) s.lengthPerformance = {};
         if (s.optimalLength === undefined) s.optimalLength = null;
