@@ -213,22 +213,7 @@
         <!-- NEW: SEPARATE STREAK GLOBAL STATS -->
         <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
             <h2 class="text-xl font-semibold mb-4 text-teal-300">📊 Thống Kê (Chuỗi Tách Biệt)</h2>
-            <div class="space-y-4">
-                <div class="bg-gray-700 p-3 rounded-lg">
-                    <span class="font-medium text-gray-400 text-sm">Toàn Cục</span>
-                    <div class="flex justify-between items-center mt-1">
-                         <span id="globalSeparatedStreakAccuracyRate" class="text-2xl font-bold text-teal-400">0.0%</span>
-                         <div><span id="globalSeparatedStreakCorrect" class="text-lg font-semibold text-white">0</span><span class="text-gray-400">/</span><span id="globalSeparatedStreakTotal" class="text-lg font-semibold text-white">0</span></div>
-                    </div>
-                </div>
-                <div class="bg-gray-700 p-3 rounded-lg">
-                    <span class="font-medium text-gray-400 text-sm">Phiên Hiện Tại</span>
-                    <div class="flex justify-between items-center mt-1">
-                         <span id="sessionSeparatedStreakAccuracyRate" class="text-2xl font-bold text-teal-400">0.0%</span>
-                         <div><span id="sessionSeparatedStreakCorrect" class="text-lg font-semibold text-white">0</span><span class="text-gray-400">/</span><span id="sessionSeparatedStreakTotal" class="text-lg font-semibold text-white">0</span></div>
-                    </div>
-                </div>
-            </div>
+            <div id="separatedStreakStatsTable" class="space-y-2"></div>
         </div>
 
         <!-- SEPARATE ENCODED STREAK ANALYSIS (YOUR IDEA) -->
@@ -819,7 +804,6 @@ function updateAnalysisUI() {
     }
 }
 
-// NEW: UI Function for Separated Encoded Streak Analysis
 function updateSeparatedStreakAnalysisUI() {
     const session = state.sessions[state.currentSessionId] || { history: [] };
     const analysisResult = SeparatedStreakAnalyzer.getPrediction(session.history, Object.values(state.sessions));
@@ -827,25 +811,54 @@ function updateSeparatedStreakAnalysisUI() {
 }
 
 function updateSeparatedStreakAccuracyUI() {
-    // Session stats
-    const sessionPredictions = state.sessions[state.currentSessionId]?.separatedStreakPredictions || [];
-    const sessionTotal = sessionPredictions.length;
-    const sessionCorrect = sessionPredictions.filter(p => p.predicted === p.actual).length;
-    const sessionRate = sessionTotal > 0 ? (sessionCorrect / sessionTotal) * 100 : 0;
-
-    document.getElementById('sessionSeparatedStreakAccuracyRate').textContent = `${sessionRate.toFixed(1)}%`;
-    document.getElementById('sessionSeparatedStreakCorrect').textContent = sessionCorrect;
-    document.getElementById('sessionSeparatedStreakTotal').textContent = sessionTotal;
-
+    const tableDiv = document.getElementById('separatedStreakStatsTable');
+    
     // Global stats
     const allPredictions = Object.values(state.sessions).flatMap(s => s.separatedStreakPredictions || []);
     const globalTotal = allPredictions.length;
     const globalCorrect = allPredictions.filter(p => p.predicted === p.actual).length;
     const globalRate = globalTotal > 0 ? (globalCorrect / globalTotal) * 100 : 0;
+
+    // Session stats
+    const sessionPredictions = state.sessions[state.currentSessionId]?.separatedStreakPredictions || [];
+    const sessionTotal = sessionPredictions.length;
+    const sessionCorrect = sessionPredictions.filter(p => p.predicted === p.actual).length;
+    const sessionRate = sessionTotal > 0 ? (sessionCorrect / sessionTotal) * 100 : 0;
     
-    document.getElementById('globalSeparatedStreakAccuracyRate').textContent = `${globalRate.toFixed(1)}%`;
-    document.getElementById('globalSeparatedStreakCorrect').textContent = globalCorrect;
-    document.getElementById('globalSeparatedStreakTotal').textContent = globalTotal;
+    // Bar Chart HTML
+    const displayedPredictions = sessionPredictions.slice(-30);
+    let individualBarsHTML = `<div class="flex items-end justify-center gap-px h-5 my-auto overflow-hidden" title="Hiển thị tối đa 30 ván gần nhất">`;
+    if (displayedPredictions.length > 0) {
+        for (const p of displayedPredictions) {
+            const isWin = p.predicted === p.actual;
+            const barClass = isWin ? 'bg-blue-500 h-5' : 'bg-red-500 h-2';
+            const title = `Đề xuất: ${p.predicted}, Ra: ${p.actual} -> ${isWin ? 'THẮNG' : 'THUA'}`;
+            individualBarsHTML += `<div class="flex-shrink-0 w-1 ${barClass} rounded-t-sm" title="${title}"></div>`;
+        }
+    } else {
+        individualBarsHTML += `<div class="w-full text-center"><span class="text-gray-600 text-xs">Chưa có</span></div>`;
+    }
+    individualBarsHTML += '</div>';
+
+    let html = `
+        <div class="grid gap-x-2 text-xs font-semibold text-gray-400 px-3" style="grid-template-columns: 2fr 4fr 3fr 3fr;">
+            <span>Phạm vi</span><span class="text-center">Diễn Biến Gần Đây</span><span class="text-center">Thắng/Tổng</span><span class="text-right">Tỷ Lệ</span>
+        </div>
+        <div class="grid gap-x-2 items-center bg-gray-700 bg-opacity-50 p-3 rounded-lg text-sm" style="grid-template-columns: 2fr 4fr 3fr 3fr;">
+            <span class="font-medium text-gray-300">Toàn Cục</span>
+            <div class="text-center text-gray-600 text-xs">--</div>
+            <div class="text-white font-semibold text-center"><span>${globalCorrect}</span><span class="text-gray-400">/</span><span>${globalTotal}</span></div>
+            <span class="font-bold text-right text-teal-400">${globalRate.toFixed(1)}%</span>
+        </div>
+        <div class="grid gap-x-2 items-center bg-gray-700 bg-opacity-50 p-3 rounded-lg text-sm" style="grid-template-columns: 2fr 4fr 3fr 3fr;">
+            <span class="font-medium text-gray-300">Phiên Này</span>
+            ${individualBarsHTML}
+            <div class="text-white font-semibold text-center"><span>${sessionCorrect}</span><span class="text-gray-400">/</span><span>${sessionTotal}</span></div>
+            <span class="font-bold text-right text-teal-400">${sessionRate.toFixed(1)}%</span>
+        </div>
+    `;
+
+    tableDiv.innerHTML = html;
 }
 
 
@@ -1176,8 +1189,8 @@ function clearCurrentSessionHistory() {
 }
 
 // --- SESSION MANAGEMENT ---
-function getSessions() { try { return JSON.parse(localStorage.getItem('baccaratPatternSessions_v8')) || {}; } catch (e) { return {}; }}
-function saveSessions() { localStorage.setItem('baccaratPatternSessions_v8', JSON.stringify(state.sessions)); localStorage.setItem('lastActiveSession_v8', state.currentSessionId); }
+function getSessions() { try { return JSON.parse(localStorage.getItem('baccaratPatternSessions_v9')) || {}; } catch (e) { return {}; }}
+function saveSessions() { localStorage.setItem('baccaratPatternSessions_v9', JSON.stringify(state.sessions)); localStorage.setItem('lastActiveSession_v9', state.currentSessionId); }
 function renameSession() {
     if (!state.currentSessionId) return;
     const currentName = state.sessions[state.currentSessionId].name;
@@ -1250,7 +1263,7 @@ function deleteSelectedSessions() {
 
         if (wasCurrentSessionDeleted) {
             state.currentSessionId = null;
-            localStorage.removeItem('lastActiveSession_v8');
+            localStorage.removeItem('lastActiveSession_v9');
         }
         
         saveSessions();
@@ -1263,8 +1276,8 @@ function deleteAllSessions() {
      showCustomConfirm('BẠN CÓ CHẮC MUỐN XÓA TẤT CẢ CÁC PHIÊN KHÔNG? Hành động này không thể hoàn tác.', () => {
         state.sessions = {};
         state.currentSessionId = null;
-        localStorage.removeItem('baccaratPatternSessions_v8');
-        localStorage.removeItem('lastActiveSession_v8');
+        localStorage.removeItem('baccaratPatternSessions_v9');
+        localStorage.removeItem('lastActiveSession_v9');
         initializeApp();
         showToast('Tất cả các phiên đã được xóa.', 'success');
     });
@@ -1274,7 +1287,7 @@ function loadSession(sessionId) {
     if (state.sessions[sessionId] && sessionId !== state.currentSessionId) {
         state.currentSessionId = sessionId;
         state.currentPrediction = null;
-        localStorage.setItem('lastActiveSession_v8', state.currentSessionId);
+        localStorage.setItem('lastActiveSession_v9', state.currentSessionId);
         updateSessionSelector(); // Re-render to show new selection
         updateAllUI();
     }
