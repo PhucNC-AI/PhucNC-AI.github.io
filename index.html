@@ -40,10 +40,10 @@
             <label for="file-upload" class="drop-zone w-full p-10 text-center rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100" id="drop-zone">
                 <div class="flex flex-col items-center justify-center">
                     <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
-                    <p class="mt-2 text-sm text-gray-500"><span class="font-semibold">Nhấn để chọn thư mục</span> hoặc kéo thả thư mục vào đây</p>
+                    <p class="mt-2 text-sm text-gray-500"><span class="font-semibold">Nhấn để chọn tệp</span> hoặc kéo thả tệp/thư mục vào đây</p>
                     <p class="text-xs text-gray-400 mt-1">Hỗ trợ các file PDF, PNG, JPG bên trong thư mục</p>
                 </div>
-                <input type="file" id="file-upload" class="hidden" webkitdirectory>
+                <input type="file" id="file-upload" class="hidden" multiple>
             </label>
             <div id="file-name" class="text-center text-sm text-gray-600 mt-2"></div>
         </div>
@@ -108,7 +108,11 @@
 
             const filePromises = [];
             for (const item of items) {
-                filePromises.push(traverseFileTree(item.webkitGetAsEntry()));
+                 // item.webkitGetAsEntry() works for both files and directories
+                const entry = item.webkitGetAsEntry();
+                if (entry) {
+                    filePromises.push(traverseFileTree(entry));
+                }
             }
             const filesArrays = await Promise.all(filePromises);
             const files = [].concat.apply([], filesArrays); // Flatten array
@@ -144,7 +148,7 @@
             });
         }
         
-        // File input change handler (for directory selection)
+        // File input change handler (for multiple file selection)
         fileUpload.addEventListener('change', async (event) => {
             await handleFiles(event.target.files);
         });
@@ -171,34 +175,47 @@
             statusContainer.classList.remove('hidden');
             
             let allProductNames = [];
+            let worker;
 
             try {
-                const worker = await Tesseract.createWorker('vie', 1, { logger: m => updateStatus(m) });
+                worker = await Tesseract.createWorker('vie', 1, { logger: m => updateStatus(m) });
 
                 for (let i = 0; i < filteredFiles.length; i++) {
                     const file = filteredFiles[i];
-                    let text = '';
+                    const displayName = file.webkitRelativePath || file.name;
                     
-                    statusText.textContent = `Đang xử lý file ${i + 1}/${filteredFiles.length}: ${file.name}`;
+                    statusText.textContent = `Đang xử lý file ${i + 1}/${filteredFiles.length}: ${displayName}`;
                     progressBar.style.width = '0%';
 
-                    if (file.type.startsWith('image/')) {
-                        const { data } = await worker.recognize(file);
-                        text = data.text;
-                    } else if (file.type === 'application/pdf') {
-                        text = await processPdf(file, worker);
-                    }
+                    try {
+                        let text = '';
+                        if (file.type.startsWith('image/')) {
+                            const { data } = await worker.recognize(file);
+                            text = data.text;
+                        } else if (file.type === 'application/pdf') {
+                            text = await processPdf(file, worker);
+                        }
 
-                    const productNames = text.split('\n')
-                        .map(line => line.trim())
-                        .map(line => line.replace(/^\d+\.\s*/, ''))
-                        .filter(line => line.length > 0 && line.length < 100); 
+                        const productNames = text.split('\n')
+                            .map(line => line.trim())
+                            .map(line => line.replace(/^\d+\.\s*/, ''))
+                            .filter(line => line.length > 0 && line.length < 100); 
 
-                    if (productNames.length > 0) {
-                        const displayName = file.webkitRelativePath || file.name;
-                        allProductNames.push(`--- Kết quả từ file: ${displayName} ---`);
-                        allProductNames.push(...productNames);
-                        if (i < filteredFiles.length - 1) allProductNames.push(''); 
+                        if (productNames.length > 0) {
+                            allProductNames.push(`--- Kết quả từ file: ${displayName} ---`);
+                            allProductNames.push(...productNames);
+                        } else {
+                            allProductNames.push(`--- Không tìm thấy nội dung trong file: ${displayName} ---`);
+                        }
+
+                    } catch (fileError) {
+                        console.error(`Lỗi khi xử lý file ${displayName}:`, fileError);
+                        allProductNames.push(`--- LỖI KHI XỬ LÝ FILE: ${displayName} ---`);
+                        allProductNames.push(`Lý do: ${fileError.message || 'Lỗi không xác định'}`);
+                    } finally {
+                        if (i < filteredFiles.length - 1) {
+                            allProductNames.push(''); 
+                        }
                     }
                 }
 
@@ -212,9 +229,12 @@
                 }
 
             } catch (error) {
-                console.error(error);
-                statusText.textContent = 'Đã xảy ra lỗi. Vui lòng thử lại.';
+                console.error("Lỗi nghiêm trọng:", error);
+                statusText.textContent = 'Đã xảy ra lỗi nghiêm trọng. Vui lòng tải lại trang và thử lại.';
                 progressBar.style.width = '0%';
+                if (worker) {
+                    await worker.terminate();
+                }
             }
         }
 
