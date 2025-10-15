@@ -31,8 +31,8 @@
 
     <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-3xl mx-auto">
         <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-gray-800">Công cụ Trích xuất Tên Sản phẩm</h1>
-            <p class="text-gray-500 mt-2">Tải lên file hoặc toàn bộ thư mục catalogue để tự động nhận diện và liệt kê tên sản phẩm.</p>
+            <h1 class="text-3xl font-bold text-gray-800">Công cụ Liệt kê Tên file PDF</h1>
+            <p class="text-gray-500 mt-2">Tải lên file hoặc toàn bộ thư mục để liệt kê danh sách các file PDF.</p>
         </div>
 
         <!-- File Upload Section -->
@@ -43,7 +43,7 @@
                     <p class="mt-2 text-sm text-gray-500"><span class="font-semibold">Nhấn để chọn tệp</span> hoặc kéo thả tệp/thư mục vào đây</p>
                     <p class="text-xs text-gray-400 mt-1">Hỗ trợ các file PDF, PNG, JPG bên trong thư mục</p>
                 </div>
-                <input type="file" id="file-upload" class="hidden" multiple>
+                <input type="file" id="file-upload" class="hidden" multiple webkitdirectory directory>
             </label>
             <div id="file-name" class="text-center text-sm text-gray-600 mt-2"></div>
         </div>
@@ -58,8 +58,8 @@
 
         <!-- Results Section -->
         <div class="mb-6">
-            <label for="result" class="block text-sm font-medium text-gray-700 mb-2">Báo cáo sản phẩm:</label>
-            <textarea id="result" rows="10" class="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" readonly placeholder="Tên các sản phẩm sẽ được liệt kê ở đây..."></textarea>
+            <label for="result" class="block text-sm font-medium text-gray-700 mb-2">Danh sách file PDF:</label>
+            <textarea id="result" rows="10" class="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" readonly placeholder="Tên các file PDF sẽ được liệt kê ở đây..."></textarea>
         </div>
 
         <!-- Action Buttons -->
@@ -68,7 +68,7 @@
                 Sao chép
             </button>
             <button id="export-btn" disabled class="w-1/2 py-3 px-4 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed transition-all">
-                Xuất Báo cáo (.txt)
+                Xuất danh sách (.txt)
             </button>
         </div>
     </div>
@@ -108,7 +108,7 @@
 
             const filePromises = [];
             for (const item of items) {
-                 // item.webkitGetAsEntry() works for both files and directories
+                // item.webkitGetAsEntry() works for both files and directories
                 const entry = item.webkitGetAsEntry();
                 if (entry) {
                     filePromises.push(traverseFileTree(entry));
@@ -158,84 +158,41 @@
              if (!files || files.length === 0) return;
 
             const allowedExtensions = ['.pdf', '.png', '.jpg', '.jpeg', '.gif'];
-            const filteredFiles = Array.from(files).filter(file => {
+            const allValidFiles = Array.from(files).filter(file => {
                 const fileName = file.name.toLowerCase();
                 return allowedExtensions.some(ext => fileName.endsWith(ext));
             });
             
-            if (filteredFiles.length === 0) {
+            if (allValidFiles.length === 0) {
                 fileNameDisplay.textContent = "Không tìm thấy file hợp lệ (PDF, JPG, PNG).";
+                resultTextarea.value = '';
+                exportBtn.disabled = true;
+                copyBtn.disabled = true;
+                statusContainer.classList.add('hidden');
+                return;
+            }
+            
+            const pdfFiles = allValidFiles.filter(file => file.name.toLowerCase().endsWith('.pdf'));
+
+            if (pdfFiles.length === 0) {
+                fileNameDisplay.textContent = `Đã tải lên ${allValidFiles.length} file, nhưng không có file PDF nào.`;
+                resultTextarea.value = "Vui lòng tải lên ít nhất một file .pdf để xem danh sách.";
+                exportBtn.disabled = true;
+                copyBtn.disabled = true;
+                statusContainer.classList.add('hidden');
                 return;
             }
 
-            fileNameDisplay.textContent = `${filteredFiles.length} file hợp lệ đã được chọn.`;
-            resultTextarea.value = '';
-            exportBtn.disabled = true;
-            copyBtn.disabled = true;
-            statusContainer.classList.remove('hidden');
+            // UPDATED: Only get the file name, not the full path
+            const pdfFileNames = pdfFiles.map(file => file.name);
             
-            let allProductNames = [];
-            let worker;
-
-            try {
-                worker = await Tesseract.createWorker('vie', 1, { logger: m => updateStatus(m) });
-
-                for (let i = 0; i < filteredFiles.length; i++) {
-                    const file = filteredFiles[i];
-                    const displayName = file.webkitRelativePath || file.name;
-                    
-                    statusText.textContent = `Đang xử lý file ${i + 1}/${filteredFiles.length}: ${displayName}`;
-                    progressBar.style.width = '0%';
-
-                    try {
-                        let text = '';
-                        if (file.type.startsWith('image/')) {
-                            const { data } = await worker.recognize(file);
-                            text = data.text;
-                        } else if (file.type === 'application/pdf') {
-                            text = await processPdf(file, worker);
-                        }
-
-                        const productNames = text.split('\n')
-                            .map(line => line.trim())
-                            .map(line => line.replace(/^\d+\.\s*/, ''))
-                            .filter(line => line.length > 0 && line.length < 100); 
-
-                        if (productNames.length > 0) {
-                            allProductNames.push(`--- Kết quả từ file: ${displayName} ---`);
-                            allProductNames.push(...productNames);
-                        } else {
-                            allProductNames.push(`--- Không tìm thấy nội dung trong file: ${displayName} ---`);
-                        }
-
-                    } catch (fileError) {
-                        console.error(`Lỗi khi xử lý file ${displayName}:`, fileError);
-                        allProductNames.push(`--- LỖI KHI XỬ LÝ FILE: ${displayName} ---`);
-                        allProductNames.push(`Lý do: ${fileError.message || 'Lỗi không xác định'}`);
-                    } finally {
-                        if (i < filteredFiles.length - 1) {
-                            allProductNames.push(''); 
-                        }
-                    }
-                }
-
-                await worker.terminate();
-                resultTextarea.value = allProductNames.join('\n');
-                statusText.textContent = `Hoàn thành! Đã xử lý ${filteredFiles.length} file.`;
-                progressBar.style.width = '100%';
-                if (resultTextarea.value) {
-                    exportBtn.disabled = false;
-                    copyBtn.disabled = false;
-                }
-
-            } catch (error) {
-                console.error("Lỗi nghiêm trọng:", error);
-                statusText.textContent = 'Đã xảy ra lỗi nghiêm trọng. Vui lòng tải lại trang và thử lại.';
-                progressBar.style.width = '0%';
-                if (worker) {
-                    await worker.terminate();
-                }
-            }
+            fileNameDisplay.textContent = `Đã tìm thấy ${pdfFiles.length} file PDF.`;
+            resultTextarea.value = pdfFileNames.join('\n');
+            
+            // Enable buttons and hide progress bar
+            exportBtn.disabled = false;
+            copyBtn.disabled = false;
+            statusContainer.classList.add('hidden');
         }
 
         async function processPdf(file, tesseractWorker) {
@@ -288,22 +245,64 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'bao-cao-san-pham.txt';
+            a.download = 'danh-sach-file-pdf.txt';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         });
         
+        // UPDATED: Made copy function more robust for cross-browser/iframe compatibility
         copyBtn.addEventListener('click', () => {
-            const text = resultTextarea.value;
-            if (!text) return;
-            navigator.clipboard.writeText(text).then(() => {
-                const originalText = copyBtn.textContent;
-                copyBtn.textContent = 'Đã sao chép!';
-                setTimeout(() => { copyBtn.textContent = originalText; }, 2000);
-            }).catch(err => console.error('Không thể sao chép: ', err));
+            const textToCopy = resultTextarea.value;
+            if (!textToCopy) return;
+
+            // Use Clipboard API if available (modern, secure)
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    showCopySuccess();
+                }).catch(err => {
+                    console.warn('Clipboard API failed, falling back.', err);
+                    copyUsingExecCommand(textToCopy); // Fallback
+                });
+            } else {
+                // Fallback for older browsers or insecure contexts (like http)
+                copyUsingExecCommand(textToCopy);
+            }
         });
+        
+        function copyUsingExecCommand(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            
+            // Make the textarea invisible
+            textArea.style.position = 'fixed';
+            textArea.style.top = '-9999px';
+            textArea.style.left = '-9999px';
+
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showCopySuccess();
+                } else {
+                    console.error('Fallback copy was unsuccessful.');
+                }
+            } catch (err) {
+                console.error('Fallback copy failed', err);
+            }
+
+            document.body.removeChild(textArea);
+        }
+
+        function showCopySuccess() {
+            const originalText = copyBtn.textContent;
+            copyBtn.textContent = 'Đã sao chép!';
+            setTimeout(() => { copyBtn.textContent = originalText; }, 2000);
+        }
     </script>
 </body>
 </html>
